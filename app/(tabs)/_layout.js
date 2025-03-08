@@ -23,15 +23,20 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} />,
         }}
       />
-      {isSignedIn && (
-        <Tabs.Screen
+      <Tabs.Screen
+        name="Log"
+        options={{
+          title: 'Log',
+          tabBarIcon: ({ color }) => <FontAwesome name="flag" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
           name="settings"
           options={{
             title: 'Settings',
             tabBarIcon: ({ color }) => <FontAwesome name="cog" size={24} color={color} />,
           }}
         />
-      )}
     </Tabs>
   );
 }

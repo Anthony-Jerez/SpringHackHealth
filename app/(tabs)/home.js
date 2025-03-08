@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { Avatar } from 'react-native-paper';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import StatsBar from '../components/StatsBar';
@@ -35,6 +35,15 @@ export default function HomeScreen() {
       </SignedIn>
 
       <SignedOut>
+        {/* ✅ MicroMeter Section moved here */}
+        <View style={styles.microMeterContainer}>
+          <Text style={styles.microMeterTitle}>MicroMeter</Text>
+          <Image 
+            source={{ uri: 'https://via.placeholder.com/100' }} // Replace with actual image URL
+            style={styles.microMeterImage}
+          />
+        </View>
+
         {/* Modern Sign In & Sign Up Buttons */}
         <View style={styles.authButtonContainer}>
           <TouchableOpacity style={styles.signInButton} onPress={() => router.push('/sign-in')}>
@@ -50,7 +59,7 @@ export default function HomeScreen() {
   );
 }
 
-// Custom Styles for Sign In & Sign Up Buttons
+// Custom Styles for Sign In & Sign Up Buttons & MicroMeter
 const styles = StyleSheet.create({
   authButtonContainer: {
     marginTop: 30,
@@ -86,5 +95,31 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  microMeterContainer: {
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#FFF', // Card-like background
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5, // Ensures shadow on Android
+  },
+  microMeterTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+    marginRight: 10,
+    fontFamily: 'monospace',
+  },
+  microMeterImage: {
+    width: 50, 
+    height: 50,
+    borderRadius: 10,
   },
 });
