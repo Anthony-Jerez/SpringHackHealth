@@ -1,6 +1,6 @@
 const API_URL = 'https://api.openai.com/v1/chat/completions';
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
 	const openai_api_key = process.env.OPENAI_API_KEY;
 
 	if (!openai_api_key) {

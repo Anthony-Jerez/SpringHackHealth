@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { Avatar } from 'react-native-paper';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import StatsBar from '../components/StatsBar';
@@ -6,6 +6,8 @@ import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from '../utils/SignOutButton';
 import { globalStyles } from '../styles/globalStyles';
 import { useRouter } from 'expo-router';
+import LandingView from '../components/LandingView';
+
 
 export default function HomeScreen() {
   const { user } = useUser();
@@ -35,22 +37,14 @@ export default function HomeScreen() {
       </SignedIn>
 
       <SignedOut>
-        {/* Modern Sign In & Sign Up Buttons */}
-        <View style={styles.authButtonContainer}>
-          <TouchableOpacity style={styles.signInButton} onPress={() => router.push('/sign-in')}>
-            <Text style={styles.buttonText}>Sign In</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/sign-up')}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
+        <LandingView/>
+       
       </SignedOut>
     </View>
   );
 }
 
-// Custom Styles for Sign In & Sign Up Buttons
+// Custom Styles for Sign In & Sign Up Buttons & MicroMeter
 const styles = StyleSheet.create({
   authButtonContainer: {
     marginTop: 30,
@@ -87,4 +81,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+ 
 });
