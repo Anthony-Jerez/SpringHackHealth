@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { useUser } from './context/UserContext'; // Import UserContext
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function SetupScreen() {
-  const { userData, setUserData } = useUser(); // Access global state
   const router = useRouter(); // For navigation
 
   // Local state to store form values
@@ -32,17 +30,6 @@ export default function SetupScreen() {
     await AsyncStorage.setItem('gender', gender);
     await AsyncStorage.setItem('rank', rank);
     await AsyncStorage.setItem('dob', JSON.stringify(dob));
-
-    // Update global state
-    setUserData((prev) => ({
-      ...prev,
-      gender,
-      height,
-      weight,
-      dob,
-      rank,
-    }));
-
     // Redirect to home page after submission
     router.replace('/');
   };
