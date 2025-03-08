@@ -1,30 +1,29 @@
-import { StyleSheet, Text, View, TextInput, Switch, ScrollView, Button, TouchableOpacity, Platform} from 'react-native';
+import { 
+  Text, View, TextInput, Switch, ScrollView, TouchableOpacity 
+} from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from "@react-native-community/datetimepicker"
-import { Picker } from "@react-native-picker/picker"
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { globalStyles } from '../styles/globalStyles'; // Import Global Styles
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { isSignedIn } = useAuth();
-  const [dob, setDob] = useState(new Date())
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [sex, setSex] = useState("male")
+  const [dob, setDob] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // Format date for display
-    const formatDate = (date) => {
-      return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`
-    }
-  
-    // Show date picker
-    const showDatepicker = () => {
-      setShowDatePicker(true)
-    }  
+  // Format date for display
+  const formatDate = (date) => {
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  };
+
+  // Show date picker
+  const showDatepicker = () => setShowDatePicker(true);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -33,7 +32,6 @@ export default function SettingsScreen() {
       loadMeasurements();
     }
   }, [isSignedIn]);
-
 
   const loadMeasurements = async () => {
     const savedHeight = await AsyncStorage.getItem('height');
@@ -56,24 +54,24 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={globalStyles.container}>
       {/* Measurements Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Personal Information</Text>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Height (cm):</Text>
+      <View style={globalStyles.section}>
+        <Text style={globalStyles.title}>Personal Information</Text>
+        <View style={globalStyles.inputContainer}>
+          <Text style={globalStyles.label}>Height (cm):</Text>
           <TextInput
-            style={styles.input}
+            style={globalStyles.input}
             placeholder="Enter height"
             keyboardType="numeric"
             value={height}
             onChangeText={setHeight}
           />
         </View>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Weight (lb):</Text>
+        <View style={globalStyles.inputContainer}>
+          <Text style={globalStyles.label}>Weight (lb):</Text>
           <TextInput
-            style={styles.input}
+            style={globalStyles.input}
             placeholder="Enter weight"
             keyboardType="numeric"
             value={weight}
@@ -81,10 +79,10 @@ export default function SettingsScreen() {
           />
         </View>
         {/* Date of Birth */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Date of Birth: </Text>
-          <TouchableOpacity style={styles.datePickerButton} onPress={showDatepicker}>
-            <Text style={styles.dateText}>{formatDate(dob)}</Text>
+        <View style={globalStyles.inputContainer}>
+          <Text style={globalStyles.label}>Date of Birth: </Text>
+          <TouchableOpacity style={globalStyles.datePickerButton} onPress={showDatepicker}>
+            <Text style={globalStyles.dateText}>{formatDate(dob)}</Text>
           </TouchableOpacity>
           
           {showDatePicker && (
@@ -105,69 +103,19 @@ export default function SettingsScreen() {
       </View>
 
       {/* Visual Settings Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Visual Settings</Text>
-        <View style={styles.switchContainer}>
-          <Text style={styles.label}>Dark Mode</Text>
+      <View style={globalStyles.section}>
+        <Text style={globalStyles.title}>Visual Settings</Text>
+        <View style={globalStyles.switchContainer}>
+          <Text style={globalStyles.label}>Dark Mode</Text>
           <Switch
             value={isDarkMode}
             onValueChange={(value) => setIsDarkMode(value)}
           />
         </View>
-        <Button title="Save Changes" onPress={saveChanges} />
+        <TouchableOpacity style={globalStyles.authButton} onPress={saveChanges}>
+          <Text style={globalStyles.authButtonText}>Save Changes</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  section: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 18,
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 10,
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  datePickerButton: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#fff",
-  },
-  dateText: {
-    fontSize: 16,
-  },
-});
