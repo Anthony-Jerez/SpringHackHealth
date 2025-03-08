@@ -10,28 +10,12 @@ export const nutrients: Nutrient[] = [
     description: 'Important for vision, immune function, and cell growth'
   },
   {
-    id: 'vitamin-c',
-    name: 'Vitamin C',
-    type: 'vitamin',
-    unit: 'mg',
-    recommendedDaily: 90,
-    description: 'Antioxidant that boosts immune system and promotes collagen production'
-  },
-  {
     id: 'vitamin-d',
     name: 'Vitamin D',
     type: 'vitamin',
     unit: 'mcg',
     recommendedDaily: 15,
     description: 'Helps calcium absorption and bone health'
-  },
-  {
-    id: 'vitamin-e',
-    name: 'Vitamin E',
-    type: 'vitamin',
-    unit: 'mg',
-    recommendedDaily: 15,
-    description: 'Antioxidant that protects cells from damage'
   },
   {
     id: 'iron',
@@ -50,37 +34,30 @@ export const nutrients: Nutrient[] = [
     description: 'Important for bone health and muscle function'
   },
   {
-    id: 'zinc',
-    name: 'Zinc',
+    id: 'iodine',
+    name: 'Iodine',
+    type: 'mineral',
+    unit: 'mcg',
+    recommendedDaily: 150,
+    description: 'Essential mineral for normal thyroid function'
+  },
+  {
+    id: 'vitamin  B12',
+    name: 'Vitamin B12',
+    type: 'vitamin',
+    unit: 'mcg',
+    recommendedDaily: 2.4,
+    description: 'essential for brain & nerve function'
+  },
+  {
+    id: 'magnesium',
+    name: 'Magnesum',
     type: 'mineral',
     unit: 'mg',
-    recommendedDaily: 11,
-    description: 'Supports immune function and wound healing'
+    recommendedDaily: 300,
+    description: 'essential for bone & teeth structure'
   },
-  {
-    id: 'protein',
-    name: 'Protein',
-    type: 'macro',
-    unit: 'g',
-    recommendedDaily: 56,
-    description: 'Essential for muscle building and repair'
-  },
-  {
-    id: 'carbs',
-    name: 'Carbohydrates',
-    type: 'macro',
-    unit: 'g',
-    recommendedDaily: 275,
-    description: 'Primary energy source for the body'
-  },
-  {
-    id: 'fat',
-    name: 'Fat',
-    type: 'macro',
-    unit: 'g',
-    recommendedDaily: 78,
-    description: 'Essential for hormone production and nutrient absorption'
-  }
+ 
 ];
 
 export const calculateNutrientProgress = (
