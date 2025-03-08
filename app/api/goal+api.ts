@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 		})
 		console.log(response);
 		const f = await response.json();
-		console.log(f.choises[0].message.content)
+		console.log(f.choices[0].message.content)
 		return Response.json({ response: f })
 	} catch (error) {
 		console.error(error);
