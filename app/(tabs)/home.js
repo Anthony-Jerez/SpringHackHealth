@@ -9,8 +9,6 @@ import { useRouter } from 'expo-router';
 import LevelAnimation from '../components/LevelAnimation';
 import LandingView from '../components/LandingView';
 
-import LevelAnimation from '../components/LevelAnimation';
-
 export default function HomeScreen() {
   const { user } = useUser();
   const router = useRouter();
