@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, SafeAreaView, TouchableOpacity, ImageBackground, Dimensions } from "react-native"
+import { Text, View, StyleSheet, SafeAreaView, TouchableOpacity, ImageBackground, Dimensions ,Image} from "react-native"
 import { Link } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 
@@ -11,6 +11,15 @@ export default function LandingView() {
 				style={styles.backgroundImage}
 				imageStyle={styles.backgroundImageStyle}
 			>
+
+      <View style={styles.microMeterContainer}>
+                  <Text style={styles.microMeterTitle}>MicroMeter</Text>
+                  <Image 
+                    source={require('../assets/images/DrMariowVitamin.png')} 
+                    style={{ width: 100, height: 150 }}
+                  />
+      </View>
+
 				<View style={styles.overlay}>
 					<View style={styles.contentContainer}>
 						<View style={styles.headerContainer}>
@@ -106,6 +115,32 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: "100%",
     gap: 16,
+  },
+  microMeterContainer: {
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#FFF', // Card-like background
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5, // Ensures shadow on Android
+  },
+  microMeterTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+    marginRight: 10,
+    fontFamily: 'monospace',
+  },
+  microMeterImage: {
+    width: 50, 
+    height: 50,
+    borderRadius: 10,
   },
   signInButton: {
     backgroundColor: "#BBDBD1",
