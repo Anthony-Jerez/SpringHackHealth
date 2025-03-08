@@ -22,19 +22,17 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} />,
-          tabBarButton: (props) => (
-            <Pressable {...props} onPress={() => router.push('/(home)')} />
-          ),
         }}
       />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <FontAwesome name="cog" size={24} color={color} />,
-          tabBarStyle: isSignedIn ? {} : { display: 'none' }, // Hide if not signed in
-        }}
-      />
+      {isSignedIn && ( // Only show Settings tab if the user is signed in
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+            tabBarIcon: ({ color }) => <FontAwesome name="cog" size={24} color={color} />,
+          }}
+        />
+      )}
     </Tabs>
   );
 }
