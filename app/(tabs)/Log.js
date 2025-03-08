@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, TouchableOpacity, Modal, FlatList, TextInput, 
   SafeAreaView, KeyboardAvoidingView, Platform, StyleSheet 
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@clerk/clerk-expo';
 import { nutrients } from './nutrientData';
-import { globalStyles } from '../styles/globalStyles'; // ✅ Keep Global Styles
+import { globalStyles } from '../styles/globalStyles';
 
 export default function NutrientLogScreen() {
+  const router = useRouter();
+  const { isSignedIn, isLoaded } = useAuth(); // ✅ Prevent premature navigation
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedNutrient, setSelectedNutrient] = useState(null);
   const [amount, setAmount] = useState('');
   const [loggedNutrients, setLoggedNutrients] = useState([]);
+
+  useEffect(() => {
+    if (!isLoaded) return; // ✅ Prevents premature navigation
+    if (!isSignedIn) {
+      router.replace('/'); // ✅ Redirect unauthorized users
+    }
+  }, [isSignedIn, isLoaded]);
+
+  // Prevents rendering while Clerk is still determining authentication status
+  if (!isLoaded || !isSignedIn) return null;
 
   const handleSelectNutrient = (nutrient) => setSelectedNutrient(nutrient);
 
@@ -208,46 +222,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '80%',
-  },
-  nutrientItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  nutrientItemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  nutrientItemType: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  closeButton: {
-    marginTop: 20,
-    padding: 15,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#999',
-    fontSize: 16,
-  },
-  amountContainer: {
-    padding: 15,
-  },
-  selectedNutrientText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  amountInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
-    marginBottom: 20,
   },
 });
 

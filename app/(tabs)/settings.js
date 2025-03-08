@@ -6,11 +6,11 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { globalStyles } from '../styles/globalStyles'; // Import Global Styles
+import { globalStyles } from '../styles/globalStyles'; // ✅ Import Global Styles
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth(); // ✅ Added `isLoaded` to prevent premature navigation
   const [dob, setDob] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [height, setHeight] = useState('');
@@ -26,12 +26,13 @@ export default function SettingsScreen() {
   const showDatepicker = () => setShowDatePicker(true);
 
   useEffect(() => {
+    if (!isLoaded) return; // ✅ Prevents premature navigation
     if (!isSignedIn) {
-      router.replace('/home'); // Redirect unauthorized users
+      router.replace('/'); // Redirect unauthorized users
     } else {
       loadMeasurements();
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, isLoaded]);
 
   const loadMeasurements = async () => {
     const savedHeight = await AsyncStorage.getItem('height');
@@ -49,12 +50,14 @@ export default function SettingsScreen() {
     alert('Changes saved!');
   };
 
-  if (!isSignedIn) {
-    return null; // Prevents rendering of settings page
-  }
+  // ✅ Prevents rendering while Clerk is still determining authentication status
+  if (!isLoaded) return null;
 
   return (
-    <ScrollView style={globalStyles.container}>
+    <ScrollView 
+      style={globalStyles.container}
+      contentContainerStyle={{ alignItems: 'center', justifyContent: 'center' }} // ✅ Fix ScrollView layout issue
+    >
       {/* Measurements Section */}
       <View style={globalStyles.section}>
         <Text style={globalStyles.title}>Personal Information</Text>
