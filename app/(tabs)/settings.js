@@ -10,7 +10,7 @@ import { globalStyles } from '../styles/globalStyles'; // ✅ Import Global Styl
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useAuth(); // ✅ Added `isLoaded` to prevent premature navigation
+  const { isSignedIn, isLoaded } = useAuth();
   const [dob, setDob] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [height, setHeight] = useState('');
@@ -26,9 +26,9 @@ export default function SettingsScreen() {
   const showDatepicker = () => setShowDatePicker(true);
 
   useEffect(() => {
-    if (!isLoaded) return; // ✅ Prevents premature navigation
+    if (!isLoaded) return;
     if (!isSignedIn) {
-      router.replace('/'); // Redirect unauthorized users
+      router.replace('/');
     } else {
       loadMeasurements();
     }
@@ -50,31 +50,30 @@ export default function SettingsScreen() {
     alert('Changes saved!');
   };
 
-  // ✅ Prevents rendering while Clerk is still determining authentication status
   if (!isLoaded) return null;
 
   return (
     <ScrollView 
-      style={globalStyles.container}
-      contentContainerStyle={{ alignItems: 'center', justifyContent: 'center' }} // ✅ Fix ScrollView layout issue
+      style={globalStyles.container} // ✅ Uses globalStyles for background only
+      contentContainerStyle={styles.scrollContainer} // ✅ Local styles for layout
     >
       {/* Measurements Section */}
-      <View style={globalStyles.section}>
-        <Text style={globalStyles.title}>Personal Information</Text>
-        <View style={globalStyles.inputContainer}>
-          <Text style={globalStyles.label}>Height (cm):</Text>
+      <View style={styles.section}>
+        <Text style={styles.title}>Personal Information</Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Height (cm):</Text>
           <TextInput
-            style={globalStyles.input}
+            style={styles.input}
             placeholder="Enter height"
             keyboardType="numeric"
             value={height}
             onChangeText={setHeight}
           />
         </View>
-        <View style={globalStyles.inputContainer}>
-          <Text style={globalStyles.label}>Weight (lb):</Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Weight (lb):</Text>
           <TextInput
-            style={globalStyles.input}
+            style={styles.input}
             placeholder="Enter weight"
             keyboardType="numeric"
             value={weight}
@@ -82,10 +81,10 @@ export default function SettingsScreen() {
           />
         </View>
         {/* Date of Birth */}
-        <View style={globalStyles.inputContainer}>
-          <Text style={globalStyles.label}>Date of Birth: </Text>
-          <TouchableOpacity style={globalStyles.datePickerButton} onPress={showDatepicker}>
-            <Text style={globalStyles.dateText}>{formatDate(dob)}</Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Date of Birth: </Text>
+          <TouchableOpacity style={styles.datePickerButton} onPress={showDatepicker}>
+            <Text style={styles.dateText}>{formatDate(dob)}</Text>
           </TouchableOpacity>
           
           {showDatePicker && (
@@ -94,9 +93,9 @@ export default function SettingsScreen() {
               mode="date"
               display="default"
               onChange={(event, selectedDate) => {
-                setShowDatePicker(false); // Close the picker
+                setShowDatePicker(false);
                 if (selectedDate) {
-                  setDob(selectedDate); // Update DOB only if selected
+                  setDob(selectedDate);
                 }
               }}
               maximumDate={new Date()}
@@ -106,19 +105,98 @@ export default function SettingsScreen() {
       </View>
 
       {/* Visual Settings Section */}
-      <View style={globalStyles.section}>
-        <Text style={globalStyles.title}>Visual Settings</Text>
-        <View style={globalStyles.switchContainer}>
-          <Text style={globalStyles.label}>Dark Mode</Text>
+      <View style={styles.section}>
+        <Text style={styles.title}>Visual Settings</Text>
+        <View style={styles.switchContainer}>
+          <Text style={styles.label}>Dark Mode</Text>
           <Switch
             value={isDarkMode}
             onValueChange={(value) => setIsDarkMode(value)}
           />
         </View>
-        <TouchableOpacity style={globalStyles.authButton} onPress={saveChanges}>
-          <Text style={globalStyles.authButtonText}>Save Changes</Text>
+        <TouchableOpacity style={styles.authButton} onPress={saveChanges}>
+          <Text style={styles.authButtonText}>Save Changes</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
+
+// ✅ Local Styles (Restricts styling outside globalStyles)
+const styles = {
+  scrollContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  section: {
+    width: '90%',
+    backgroundColor: 'white',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#555',
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#F9F9F9',
+  },
+  datePickerButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  dateText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  authButton: {
+    width: 180,
+    paddingVertical: 12,
+    marginVertical: 8,
+    backgroundColor: '#FFD700', // Gold Button
+    borderRadius: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  authButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+};
+

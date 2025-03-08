@@ -1,22 +1,21 @@
 import { Tabs } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Pressable } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
+import { globalStyles } from '../styles/globalStyles'; // ✅ Import Global Styles
 
 export default function TabLayout() {
-  const router = useRouter();
-  const { isSignedIn } = useAuth(); // Get authentication state
+  const { isSignedIn } = useAuth();
 
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: '#2f95dc' }}>
-      <Tabs.Screen
-        name="BLANK"
-        options={{
-          title: 'BLANK',
-          tabBarIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} />,
-        }}
-      />
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: '#000000',
+        tabBarStyle: globalStyles.tabBar, // ✅ Applies global tab bar styling
+        headerStyle: globalStyles.topBar, // ✅ Uses global top bar styling
+        headerTitleStyle: globalStyles.topBarTitle, // ✅ Uses global title styling
+        headerTitleAlign: 'center', // ✅ Ensures title is centered
+      }}
+    >
       <Tabs.Screen
         name="home"
         options={{
@@ -24,7 +23,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <FontAwesome name="home" size={24} color={color} />,
         }}
       />
-      {isSignedIn && ( // Only show Settings tab if the user is signed in
+      {isSignedIn && (
         <Tabs.Screen
           name="settings"
           options={{

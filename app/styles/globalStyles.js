@@ -3,36 +3,38 @@ import { StyleSheet } from 'react-native';
 export const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
-    // alignItems: 'center',
-    // justifyContent: 'center',
     backgroundColor: '#EAE8FF', // Lavender Background
-    padding: 20,
   },
   
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#FFD700', // Gold for contrast
+    color: '#000000', // Gold for contrast
     marginTop: 15,
+    fontFamily: 'monospace', // 🔥 Change this to any desired font
+    textAlign:'center',
   },
+
   tabBar: {
-    backgroundColor: '#EAE8FF',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#DDD',
   },
-  authButton: {
-    width: 180,
-    paddingVertical: 12,
-    marginVertical: 8,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#FFD700', // Gold border
-    borderRadius: 25, // Circular button
+
+  topBar: {
+    backgroundColor: '#FFFFFF',
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#DDD',
   },
-  authButtonText: {
-    color: '#FFD700',
-    fontSize: 16,
+
+  topBarTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#000000',
+    fontFamily: 'monospace', // 🔥 Matches title font
+    textAlign:'center',
   },
 });
