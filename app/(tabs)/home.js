@@ -6,6 +6,8 @@ import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from '../utils/SignOutButton';
 import { globalStyles } from '../styles/globalStyles';
 import { useRouter } from 'expo-router';
+import LandingView from '../components/LandingView';
+
 
 export default function HomeScreen() {
   const { user } = useUser();
@@ -35,25 +37,8 @@ export default function HomeScreen() {
       </SignedIn>
 
       <SignedOut>
-        {/* ✅ MicroMeter Section moved here */}
-        <View style={styles.microMeterContainer}>
-          <Text style={styles.microMeterTitle}>MicroMeter</Text>
-          <Image 
-            source={{ uri: 'https://via.placeholder.com/100' }} // Replace with actual image URL
-            style={styles.microMeterImage}
-          />
-        </View>
-
-        {/* Modern Sign In & Sign Up Buttons */}
-        <View style={styles.authButtonContainer}>
-          <TouchableOpacity style={styles.signInButton} onPress={() => router.push('/sign-in')}>
-            <Text style={styles.buttonText}>Sign In</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/sign-up')}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
+        <LandingView/>
+       
       </SignedOut>
     </View>
   );
@@ -96,30 +81,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  microMeterContainer: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#FFF', // Card-like background
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5, // Ensures shadow on Android
-  },
-  microMeterTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginRight: 10,
-    fontFamily: 'monospace',
-  },
-  microMeterImage: {
-    width: 50, 
-    height: 50,
-    borderRadius: 10,
-  },
+ 
 });
