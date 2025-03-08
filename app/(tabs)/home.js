@@ -6,8 +6,8 @@ import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from '../utils/SignOutButton';
 import { globalStyles } from '../styles/globalStyles';
 import { useRouter } from 'expo-router';
+import LevelAnimation from '../components/LevelAnimation';
 import LandingView from '../components/LandingView';
-
 
 export default function HomeScreen() {
   const { user } = useUser();
@@ -34,6 +34,7 @@ export default function HomeScreen() {
         <StatsBar label="Protein" value={50} maxValue={100} />
         <StatsBar label="Vitamin C" value={75} maxValue={100} />
         <StatsBar label="Iron" value={30} maxValue={100} />
+		<LevelAnimation level={1}/>
       </SignedIn>
 
       <SignedOut>
