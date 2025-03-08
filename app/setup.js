@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useUser } from './context/UserContext'; // Import UserContext
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function SetupScreen() {
   const { userData, setUserData } = useUser(); // Access global state
@@ -12,16 +13,25 @@ export default function SetupScreen() {
   const [gender, setGender] = useState(userData.gender || '');
   const [height, setHeight] = useState(userData.height || '');
   const [weight, setWeight] = useState(userData.weight || '');
-// store all these and rank via submit
+  const [dob, setDob] = useState(userData.dob || '');
+  const [rank, setRank] = useState(userData.rank || '1');
+
+  // Format date for display
+  const formatDate = (date) => {
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  };
+
+  // Show date picker
+  const showDatepicker = () => setShowDatePicker(true);
+
   // Save user data and navigate to Home Page
   const handleSubmit = async () => {
-    const userInfo = { gender, height, weight };
-
     // Save to AsyncStorage
     await AsyncStorage.setItem('height', height);
     await AsyncStorage.setItem('weight', weight);
     await AsyncStorage.setItem('gender', gender);
-    // await AsyncStorage.setItem('dob', JSON.stringify(dob));
+    await AsyncStorage.setItem('rank', rank);
+    await AsyncStorage.setItem('dob', JSON.stringify(dob));
 
     // Update global state
     setUserData((prev) => ({
@@ -29,6 +39,8 @@ export default function SetupScreen() {
       gender,
       height,
       weight,
+      dob,
+      rank,
     }));
 
     // Redirect to home page after submission
@@ -64,6 +76,26 @@ export default function SetupScreen() {
         value={weight}
         onChangeText={setWeight}
       />
+
+      <Text style={styles.label}>Date of Birth: </Text>
+      <TouchableOpacity style={styles.datePickerButton} onPress={showDatepicker}>
+        <Text style={styles.dateText}>{formatDate(dob)}</Text>
+      </TouchableOpacity>
+      
+      {showDatePicker && (
+        <DateTimePicker
+          value={dob}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) {
+              setDob(selectedDate);
+            }
+          }}
+          maximumDate={new Date()}
+        />
+      )}
 
       <Button title="Save & Continue" onPress={handleSubmit} />
     </View>
