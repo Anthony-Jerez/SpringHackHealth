@@ -1,6 +1,17 @@
 import { useSignIn } from '@clerk/clerk-expo'
 import { Link, useRouter } from 'expo-router'
-import { Text, TextInput, Button, View } from 'react-native'
+import { Text, 
+	TextInput, 
+	Button, 
+	View, 
+	TouchableOpacity, 
+	StyleSheet, 
+	KeyboardAvoidingView, 
+	Platform, 
+	ScrollView, 
+	SafeAreaView 
+} from 'react-native'
+import { StatusBar } from "expo-status-bar"
 import React, { useCallback, useEffect } from 'react'
 import * as WebBrowser from 'expo-web-browser'
 import * as AuthSession from 'expo-auth-session'
@@ -111,33 +122,200 @@ export default function Page() {
     }
   }
 
-  return (
-    <View>
-      <TextInput
-        autoCapitalize="none"
-        value={emailAddress}
-        placeholder="Enter email"
-        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-      />
-      <TextInput
-        value={password}
-        placeholder="Enter password"
-        secureTextEntry={true}
-        onChangeText={(password) => setPassword(password)}
-      />
-      <Button title="Sign in" onPress={onSignInPress} />
-      <View>
-        <Text>Don't have an account?</Text>
-        <Link href="/sign-up">
-          <Text>Sign up</Text>
-        </Link>
-      </View>
-		<View>
-      		<Button title="Sign in with Google" onPress={onPressGoogle} />
-    	</View>
-		<View>
-      		<Button title="Sign in with Apple" onPress={onPressApple} />
-    	</View>
-    </View>
-  )
+	return (
+		<SafeAreaView style={styles.container}>
+			<StatusBar style="dark" />
+			<KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoid}>
+				<ScrollView contentContainerStyle={styles.scrollContent}>
+					<View style={styles.card}>
+						{/* Header */}
+						<Text style={styles.title}>Sign into SpringHackHealth</Text>
+						<Text style={styles.subtitle}>Welcome back! Please sign in to continue</Text>
+
+						{/* Social Sign In */}
+						<View style={styles.socialButtonsContainer}>
+							<TouchableOpacity
+								style={[styles.socialButton, styles.googleButton]}
+								onPress={onPressGoogle}
+								activeOpacity={0.8}
+							>
+								<Text style={styles.socialButtonText}>Google</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								style={[styles.socialButton, styles.appleButton]}
+								onPress={onPressApple}
+								activeOpacity={0.8}
+							>
+								<Text style={styles.socialButtonText}>Apple</Text>
+							</TouchableOpacity>
+						</View>
+
+						{/* Divider */}
+						<View style={styles.dividerContainer}>
+							<View style={styles.dividerLine} />
+							<Text style={styles.dividerText}>or</Text>
+							<View style={styles.dividerLine} />
+						</View>
+
+						{/* Email/Password Sign In */}
+						<View style={styles.inputContainer}>
+							<TextInput
+								style={styles.input}
+								autoCapitalize="none"
+								value={emailAddress}
+								placeholder="Email address"
+								onChangeText={(email) => setEmailAddress(email)}
+								keyboardType="email-address"
+							/>
+						</View>
+
+						<View style={styles.inputContainer}>
+							<TextInput
+								style={styles.input}
+								value={password}
+								placeholder="Password"
+								secureTextEntry={true}
+								onChangeText={(password) => setPassword(password)}
+							/>
+						</View>
+
+						<TouchableOpacity style={styles.button} onPress={onSignInPress} activeOpacity={0.8}>
+							<Text style={styles.buttonText}>Sign In</Text>
+						</TouchableOpacity>
+
+						{/* Sign Up Link */}
+						<View style={styles.signUpContainer}>
+							<Text style={styles.signUpText}>Don't have an account?</Text>
+							<Link href="/sign-up" asChild>
+								<TouchableOpacity>
+									<Text style={styles.signUpLink}>Sign up</Text>
+								</TouchableOpacity>
+							</Link>
+						</View>
+					</View>
+				</ScrollView>
+			</KeyboardAvoidingView>
+		</SafeAreaView>
+	)
 }
+
+const styles = StyleSheet.create({
+	container: {
+	  flex: 1,
+	  backgroundColor: "#f5f5f5",
+	},
+	keyboardAvoid: {
+	  flex: 1,
+	},
+	scrollContent: {
+	  flexGrow: 1,
+	  justifyContent: "center",
+	  padding: 20,
+	},
+	card: {
+	  backgroundColor: "white",
+	  borderRadius: 12,
+	  padding: 24,
+	  shadowColor: "#000",
+	  shadowOffset: { width: 0, height: 2 },
+	  shadowOpacity: 0.1,
+	  shadowRadius: 4,
+	  elevation: 3,
+	},
+	title: {
+	  fontSize: 24,
+	  fontWeight: "bold",
+	  color: "#333",
+	  marginBottom: 8,
+	  textAlign: "center",
+	},
+	subtitle: {
+	  fontSize: 14,
+	  color: "#888",
+	  marginBottom: 24,
+	  textAlign: "center",
+	},
+	socialButtonsContainer: {
+	  flexDirection: "row",
+	  justifyContent: "space-between",
+	  marginBottom: 24,
+	},
+	socialButton: {
+	  flex: 1,
+	  height: 48,
+	  borderRadius: 8,
+	  justifyContent: "center",
+	  alignItems: "center",
+	  marginHorizontal: 4,
+	},
+	googleButton: {
+	  backgroundColor: "#f2f2f2",
+	  borderWidth: 1,
+	  borderColor: "#ddd",
+	},
+	appleButton: {
+	  backgroundColor: "#f2f2f2",
+	},
+	socialButtonText: {
+	  fontSize: 14,
+	  fontWeight: "600",
+	  color: "#333",
+	},
+	dividerContainer: {
+	  flexDirection: "row",
+	  alignItems: "center",
+	  marginBottom: 24,
+	},
+	dividerLine: {
+	  flex: 1,
+	  height: 1,
+	  backgroundColor: "#ddd",
+	},
+	dividerText: {
+	  paddingHorizontal: 10,
+	  color: "#888",
+	  fontSize: 14,
+	},
+	inputContainer: {
+	  marginBottom: 16,
+	  borderWidth: 1,
+	  borderColor: "#BBDBD1",
+	  borderRadius: 8,
+	  backgroundColor: "#F9FCFB",
+	},
+	input: {
+	  height: 50,
+	  paddingHorizontal: 16,
+	  fontSize: 16,
+	},
+	button: {
+	  backgroundColor: "#BBDBD1",
+	  height: 50,
+	  borderRadius: 8,
+	  justifyContent: "center",
+	  alignItems: "center",
+	  marginTop: 8,
+	  marginBottom: 16,
+	},
+	buttonText: {
+	  color: "#333",
+	  fontSize: 16,
+	  fontWeight: "600",
+	},
+	signUpContainer: {
+	  flexDirection: "row",
+	  justifyContent: "center",
+	  alignItems: "center",
+	  gap: 4,
+	},
+	signUpText: {
+	  color: "#666",
+	  fontSize: 14,
+	},
+	signUpLink: {
+	  color: "#BBDBD1",
+	  fontWeight: "600",
+	  fontSize: 14,
+	},
+  })
