@@ -8,11 +8,12 @@ import { SignOutButton } from '../utils/SignOutButton';
 
 export default function HomeScreen() {
 	const { user } = useUser()
+	
   return (
     <View style={styles.container}>
       <SignedIn>
 		<SignOutButton />
-        <Text>Hello {user?.emailAddresses[0].emailAddress}</Text>
+        <Text>Hello {user?.username}</Text>
 		{/* Animated Avatar */}
 		<Animated.View entering={FadeInDown.duration(1000)}>
 			<Avatar.Image 
