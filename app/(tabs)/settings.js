@@ -114,10 +114,10 @@ export default function SettingsScreen() {
             onValueChange={(value) => setIsDarkMode(value)}
           />
         </View>
-        <TouchableOpacity style={styles.authButton} onPress={saveChanges}>
-          <Text style={styles.authButtonText}>Save Changes</Text>
-        </TouchableOpacity>
       </View>
+      <TouchableOpacity style={styles.authButton} onPress={saveChanges}>
+        <Text style={styles.authButtonText}>Save Changes</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
