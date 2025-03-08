@@ -5,6 +5,7 @@ import StatsBar from '../components/StatsBar'; // Import StatsBar
 import { Link } from 'expo-router';
 import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from '../utils/SignOutButton';
+import LandingView from '../components/LandingView';
 
 export default function HomeScreen() {
 	const { user } = useUser()
@@ -31,12 +32,7 @@ export default function HomeScreen() {
 		<StatsBar label="Iron" value={30} maxValue={100} />
       </SignedIn>
       <SignedOut>
-        <Link href="/(auth)/sign-in">
-          <Text>Sign in</Text>
-        </Link>
-        <Link href="/(auth)/sign-up">
-          <Text>Sign up</Text>
-        </Link>
+        <LandingView />
       </SignedOut>
     </View>
   );
@@ -47,7 +43,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#222',
+    // backgroundColor: '#222',
   },
   title: {
     fontSize: 20,
