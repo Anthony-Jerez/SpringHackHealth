@@ -6,6 +6,7 @@ import { SignedIn, SignedOut, useUser } from '@clerk/clerk-expo';
 import { SignOutButton } from '../utils/SignOutButton';
 import { globalStyles } from '../styles/globalStyles';
 import { useRouter } from 'expo-router';
+import LevelAnimation from '../components/LevelAnimation';
 
 export default function HomeScreen() {
   const { user } = useUser();
@@ -32,13 +33,14 @@ export default function HomeScreen() {
         <StatsBar label="Protein" value={50} maxValue={100} />
         <StatsBar label="Vitamin C" value={75} maxValue={100} />
         <StatsBar label="Iron" value={30} maxValue={100} />
+		<LevelAnimation level={1}/>
       </SignedIn>
 
       <SignedOut>
         {/* ✅ MicroMeter Section moved here */}
         <View style={styles.microMeterContainer}>
           <Text style={styles.microMeterTitle}>MicroMeter</Text>
-          <Image 
+          <Image
             source={{ uri: 'https://via.placeholder.com/100' }} // Replace with actual image URL
             style={styles.microMeterImage}
           />
