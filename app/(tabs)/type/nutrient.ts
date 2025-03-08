@@ -22,14 +22,3 @@ export interface UserNutrientState {
   date: string;
 }
 
-export type PetMood = 'happy' | 'neutral' | 'sad';
-
-export interface SupplementPlan {
-  id: string;
-  nutrientId: string;
-  name: string;
-  price: number;
-  url?: string;
-  scheduledPurchaseDate?: Date;
-  notes?: string;
-}
