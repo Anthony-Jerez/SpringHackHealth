@@ -15,6 +15,7 @@ export default function SettingsScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
+  const [gender, setGender] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Format date for display
@@ -38,15 +39,18 @@ export default function SettingsScreen() {
     const savedHeight = await AsyncStorage.getItem('height');
     const savedWeight = await AsyncStorage.getItem('weight');
     const savedDob = await AsyncStorage.getItem('dob');
+    const savedGender = await AsyncStorage.getItem('gender');
     if (savedHeight) setHeight(savedHeight);
     if (savedWeight) setWeight(savedWeight);
     if (savedDob) setDob(new Date(JSON.parse(savedDob)));
+    if (savedGender) setGender(savedGender);
   };
 
   const saveChanges = async () => {
     await AsyncStorage.setItem('height', height);
     await AsyncStorage.setItem('weight', weight);
     await AsyncStorage.setItem('dob', JSON.stringify(dob));
+    await AsyncStorage.setItem('gender', gender);
     alert('Changes saved!');
   };
 
@@ -78,6 +82,15 @@ export default function SettingsScreen() {
             keyboardType="numeric"
             value={weight}
             onChangeText={setWeight}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Gender:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter gender"
+            value={gender}
+            onChangeText={setGender}
           />
         </View>
         {/* Date of Birth */}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useUser } from './context/UserContext'; // Import UserContext
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SetupScreen() {
   const { userData, setUserData } = useUser(); // Access global state
@@ -11,9 +12,18 @@ export default function SetupScreen() {
   const [gender, setGender] = useState(userData.gender || '');
   const [height, setHeight] = useState(userData.height || '');
   const [weight, setWeight] = useState(userData.weight || '');
-
+// store all these and rank via submit
   // Save user data and navigate to Home Page
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const userInfo = { gender, height, weight };
+
+    // Save to AsyncStorage
+    await AsyncStorage.setItem('height', height);
+    await AsyncStorage.setItem('weight', weight);
+    await AsyncStorage.setItem('gender', gender);
+    // await AsyncStorage.setItem('dob', JSON.stringify(dob));
+
+    // Update global state
     setUserData((prev) => ({
       ...prev,
       gender,
