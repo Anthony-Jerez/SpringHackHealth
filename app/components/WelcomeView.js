@@ -89,7 +89,7 @@ export default function WelcomeView() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={globalStyles.container}>
       <StatusBar style="dark" />
 
       {/* Header Section */}

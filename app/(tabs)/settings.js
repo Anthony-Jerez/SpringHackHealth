@@ -116,8 +116,8 @@ export default function SettingsScreen() {
           )}
         </View>
       </View>
-
-      {/* Visual Settings Section */}
+      
+      {/* Visual Settings Section 
       <View style={styles.section}>
         <Text style={styles.title}>Visual Settings</Text>
         <View style={styles.switchContainer}>
@@ -127,12 +127,12 @@ export default function SettingsScreen() {
             onValueChange={(value) => setIsDarkMode(value)}
           />
         </View>
-      </View>
+            </View> */}
       <TouchableOpacity style={styles.authButton} onPress={saveChanges}>
         <Text style={styles.authButtonText}>Save Changes</Text>
       </TouchableOpacity>
     </ScrollView>
-  );
+  ); 
 }
 
 // ✅ Local Styles (Restricts styling outside globalStyles)
