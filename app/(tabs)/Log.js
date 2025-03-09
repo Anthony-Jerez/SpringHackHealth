@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { nutrients } from './nutrientData';
 import { globalStyles } from '../styles/globalStyles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getItem, setItem, getAllItems } from '../utils/AsyncStorage';
 
 export default function NutrientLogScreen() {
   const router = useRouter();
@@ -15,6 +17,22 @@ export default function NutrientLogScreen() {
   const [selectedNutrient, setSelectedNutrient] = useState(null);
   const [amount, setAmount] = useState('');
   const [loggedNutrients, setLoggedNutrients] = useState([]);
+
+	// Load logged nutrients on mount
+	useEffect(() => {
+		const loadLoggedNutrients = async () => {
+		  try {
+			const storedLogs = await getItem('loggedNutrients');
+			if (storedLogs) {
+			  setLoggedNutrients(storedLogs);
+			}
+		  } catch (error) {
+			console.error('Error loading nutrient logs:', error);
+		  }
+		};
+	
+		loadLoggedNutrients();
+	  }, []);
 
   useEffect(() => {
     if (!isLoaded) return; // ✅ Prevents premature navigation
@@ -28,23 +46,58 @@ export default function NutrientLogScreen() {
 
   const handleSelectNutrient = (nutrient) => setSelectedNutrient(nutrient);
 
-  const handleLogNutrient = () => {
-    if (!selectedNutrient || !amount) return;
+//   const handleLogNutrient = () => {
+//     if (!selectedNutrient || !amount) return;
     
-    const newLogEntry = {
-      id: Date.now().toString(),
-      nutrientId: selectedNutrient.id,
-      name: selectedNutrient.name,
-      amount: parseFloat(amount),
-      unit: selectedNutrient.unit,
-      timestamp: new Date(),
-    };
+//     const newLogEntry = {
+//       id: Date.now().toString(),
+//       nutrientId: selectedNutrient.id,
+//       name: selectedNutrient.name,
+//       amount: parseFloat(amount),
+//       unit: selectedNutrient.unit,
+//       timestamp: new Date(),
+//     };
 
-    setLoggedNutrients([...loggedNutrients, newLogEntry]);
-    setSelectedNutrient(null);
-    setAmount('');
-    setModalVisible(false);
+//     setLoggedNutrients([...loggedNutrients, newLogEntry]);
+//     setSelectedNutrient(null);
+//     setAmount('');
+//     setModalVisible(false);
+//   };
+
+const handleLogNutrient = async () => {
+  if (!selectedNutrient || !amount) return;
+  
+  const amountValue = parseFloat(amount);
+  
+  const newLogEntry = {
+	id: Date.now().toString(),
+	nutrientId: selectedNutrient.id,
+	name: selectedNutrient.name,
+	amount: amountValue,
+	unit: selectedNutrient.unit,
+	timestamp: new Date(),
   };
+
+  // Update logs array
+  const updatedLogs = [...loggedNutrients, newLogEntry];
+  setLoggedNutrients(updatedLogs);
+
+  try {
+	// Save to AsyncStorage - both the logs and the individual nutrient value
+	await setItem('loggedNutrients', updatedLogs);
+	
+	// Update or create the individual nutrient entry for the StatsBar
+	const currentValue = await getItem(selectedNutrient.name.toLowerCase()) || 0;
+	const newValue = currentValue + amountValue;
+	await setItem(selectedNutrient.name.toLowerCase(), newValue);
+  } catch (error) {
+	console.error('Error saving nutrient log:', error);
+  }
+
+  setSelectedNutrient(null);
+  setAmount('');
+  setModalVisible(false);
+};
 
   const calculateDailyTotal = (nutrientId) => {
     const today = new Date().setHours(0, 0, 0, 0);
@@ -222,6 +275,72 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '80%',
+  },
+  amountContainer: {
+    padding: 15,
+  },
+  selectedNutrientText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  amountInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+    flex: 1,
+    marginRight: 10,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#333',
+  },
+  confirmButton: {
+    backgroundColor: '#4CAF50',
+    flex: 1,
+    marginLeft: 10,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    marginTop: 15,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+  },
+  closeButtonText: {
+    color: '#333',
+  },
+  nutrientItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  nutrientItemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  nutrientItemType: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 2,
   },
 });
 

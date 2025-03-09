@@ -1,8 +1,40 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // StatsBar Component
-export default function StatsBar({ label, value, maxValue }) {
+export default function StatsBar({ label, storageKey, maxValue, value: propValue }) {
+
+	const [value, setValue] = useState(propValue || 0);
+
+  // Use either the prop value or fetch from AsyncStorage
+  useEffect(() => {
+    // If value is provided as prop, use it
+    if (propValue !== undefined) {
+      setValue(propValue);
+      return;
+    }
+    
+    // Otherwise fetch from storage
+    const fetchData = async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem(storageKey);
+        if (storedValue !== null) {
+          setValue(JSON.parse(storedValue));
+        }
+      } catch (error) {
+        console.error(`Error fetching ${storageKey} from storage:`, error);
+      }
+    };
+
+    fetchData();
+
+    // Listen for storage updates (when another component changes it)
+    const interval = setInterval(fetchData, 1000); // Poll every second
+    return () => clearInterval(interval);
+  }, [storageKey, propValue]);
+
   // Calculate the percentage of intake
   const percentage = Math.min((value / maxValue) * 100, 100);
 
