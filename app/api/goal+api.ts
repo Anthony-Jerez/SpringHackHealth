@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 	if (!openai_api_key) {
 		throw new Error('Add OPENAI_API_KEY in your .env');
 	}
-
+	console.log("here in api post");
 	try {
 		const data = await request.json();
 		const content = data.content;
@@ -30,8 +30,9 @@ export async function POST(request: Request) {
 		})
 		
 		const res = await response.json();
-		console.log(res.choices[0].message.content)
-		return Response.json({ response: res })
+		console.log("IN API GOAL POST", res.choices[0].message.content)
+		const airesponse = res.choices[0].message.content;
+		return Response.json({ response: airesponse })
 	} catch (error) {
 		console.error(error);
 		return Response.json({ e: 'failed to hit openai' });

@@ -10,6 +10,9 @@ import { nutrients } from './nutrientData';
 import { globalStyles } from '../styles/globalStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getItem, setItem, getAllItems } from '../utils/AsyncStorage';
+import Constants from 'expo-constants';
+import { StatusBar } from 'expo-status-bar';
+import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 export default function NutrientLogScreen() {
   const router = useRouter();
@@ -24,76 +27,12 @@ export default function NutrientLogScreen() {
   const [selectedGoalNutrient, setSelectedGoalNutrient] = useState(null);
   const [goalAmount, setGoalAmount] = useState('');
 
-  // ✅ AI Goal Modal State
-  const [aiGoalModalVisible, setAiGoalModalVisible] = useState(false);
+	const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
   
   // ✅ Added states for user metrics
   const [sex, setSex] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-
-  // ✅ AI Goal Function - Placeholder for AI recommendations
-  const handleGenerateAiGoal = async () => {
-    try {
-      const loggedData = await getItem('loggedNutrients') || [];
-      const currentGoals = await getItem('visibleNutrients') || [];
-
-      // Save user metrics
-      await setItem('userMetrics', {
-        sex,
-        height,
-        weight
-      });
-
-      // TODO: Implement AI model to generate recommended goals
-      const recommendedGoals = [
-        { id: 'protein', name: 'Protein', unit: 'g', maxValue: 100 },
-        { id: 'fiber', name: 'Fiber', unit: 'g', maxValue: 30 }
-      ];
-
-      // Save AI-generated goals
-      await setItem('aiRecommendedGoals', recommendedGoals);
-
-      setAiGoalModalVisible(false);
-      console.log("AI Goal Recommendations:", recommendedGoals);
-      console.log("User Metrics:", { sex, height, weight });
-      
-    } catch (error) {
-      console.error('Error generating AI goals:', error);
-    }
-  };
-
-  // Load user metrics on mount
-  useEffect(() => {
-    const loadUserMetrics = async () => {
-      try {
-        const storedMetrics = await getItem('userMetrics');
-        if (storedMetrics) {
-          setSex(storedMetrics.sex || '');
-          setHeight(storedMetrics.height || '');
-          setWeight(storedMetrics.weight || '');
-        }
-      } catch (error) {
-        console.error('Error loading user metrics:', error);
-      }
-    };
-
-    loadUserMetrics();
-  }, []);
-
-  // Add the debugging useEffect here
-  useEffect(() => {
-    const checkStorage = async () => {
-      const allData = await getAllItems();
-      console.log("All AsyncStorage data:", allData);
-      
-      // Specifically check visibleNutrients
-      const visibleNuts = await getItem('visibleNutrients');
-      console.log("Visible nutrients:", visibleNuts);
-    };
-
-    checkStorage();
-  }, []);
 
   // Load logged nutrients on mount
   useEffect(() => {
@@ -226,54 +165,182 @@ export default function NutrientLogScreen() {
     return Math.round((total / nutrient.recommendedDaily) * 100);
   };
 
+  const fetchData = async () => {
+		const storedData = await getAllItems();
+		console.log("Stored Data:", storedData); // Debugging
+  
+		// 1️⃣ Aggregate `loggedNutrients` to sum amounts by `nutrientId`
+		const aggregatedNutrients = {};
+		if (storedData.loggedNutrients) {
+			storedData.loggedNutrients.forEach((log) => {
+				const nutrientKey = log.nutrientId.toLowerCase().trim(); // Normalize key
+				const amount = parseFloat(log.amount) || 0;
+  
+				if (trackedNutrients.includes(nutrientKey)) {
+					aggregatedNutrients[nutrientKey] = (aggregatedNutrients[nutrientKey] || 0) + amount;
+				}
+			});
+		}
+  
+		// 2️⃣ Merge with individual AsyncStorage values (if present)
+		Object.keys(storedData).forEach((key) => {
+			const normalizedKey = key.toLowerCase().trim();
+			if (trackedNutrients.includes(normalizedKey) && !aggregatedNutrients[normalizedKey]) {
+				aggregatedNutrients[normalizedKey] = parseFloat(storedData[key]) || 0;
+			}
+		});
+  
+		console.log("Aggregated Nutrient Data:", aggregatedNutrients); // Debugging
+		return aggregatedNutrients;
+	};
+
+  const generateGoalWithAI = async () => {
+	
+	try {
+		const { manifest } = Constants;
+
+		const storedData = await getAllItems();
+		console.log(storedData);
+
+		const nutritionalInfo = await fetchData();
+
+		console.log('nutritional info', nutritionalInfo);
+
+		const nutritionalInfoString = Object.entries(nutritionalInfo)
+			.map(([key, value]) => `${key}: ${value}`)
+			.join("\n");
+
+		const message = `I'm ${storedData['height']} and weight about ${storedData['weight']}.
+		Here are my nutritional information: ${nutritionalInfoString}
+		`
+
+		console.log("message to send", message);
+
+		const baseUrl = 
+      		manifest?.debuggerHost?.split(':').shift() || 'localhost';
+
+		const apiUrl = `http://bzywtj0-anonymous-8069.exp.direct/api/goal`;
+    	console.log('Attempting to fetch from:', apiUrl);
+
+		const response = await fetch(apiUrl, {
+			method: 'POST',
+			// headers: {
+			// 	'Content-Type': 'application/json',
+			// },
+			body: JSON.stringify({ content: message })
+		});
+		const airesponse = await response.json();
+		console.log("AI RESPONSE:", airesponse);
+		await setItem("AI-Generated-Goal", airesponse.response);
+	} catch (error) {
+		console.error('Failed to reach /api/goal', error);
+	}
+  }
+
   return (
-    <SafeAreaView style={[globalStyles.container, styles.overrideContainer]}>
-      <Text style={[globalStyles.title, styles.overrideTitle]}>Nutrient Tracker</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
 
-      {/* ✅ AI Goal Button */}
-      <TouchableOpacity 
-        style={[globalStyles.authButton, styles.aiGoalButton]} 
-        onPress={() => setAiGoalModalVisible(true)}
-      >
-        <Text style={[globalStyles.authButtonText, styles.aiGoalButtonText]}>AI Goal</Text>
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Nutrient Tracker</Text>
+      </View>
 
-      {/* Custom Goal Button */}
-      <TouchableOpacity 
-        style={[globalStyles.authButton, styles.customGoalButton]} 
-        onPress={() => setCustomGoalModalVisible(true)}
-      >
-        <Text style={[globalStyles.authButtonText, styles.customGoalButtonText]}>Set Custom Goal</Text>
-      </TouchableOpacity>
+      {/* Action Buttons */}
+      <View style={styles.actionButtonsContainer}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => setModalVisible(true)}>
+          <View style={styles.actionButtonInner}>
+            <MaterialCommunityIcons name="food-apple" size={24} color="#fff" />
+            <Text style={styles.actionButtonText}>Log Nutrients</Text>
+          </View>
+        </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={[globalStyles.authButton, styles.logButton]} 
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={[globalStyles.authButtonText, styles.logButtonText]}>Log Nutrients</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.goalButton]}
+          onPress={() => setCustomGoalModalVisible(true)}
+        >
+          <View style={styles.actionButtonInner}>
+            <Ionicons name="flag" size={24} color="#fff" />
+            <Text style={styles.actionButtonText}>Set Goal</Text>
+          </View>
+        </TouchableOpacity>
 
-      <Text style={[globalStyles.sectionTitle, styles.sectionTitle]}>Today's Intake</Text>
+        <TouchableOpacity style={[styles.actionButton, styles.aiButton]} onPress={generateGoalWithAI}>
+          <View style={styles.actionButtonInner}>
+            <FontAwesome5 name="robot" size={24} color="#fff" />
+            <Text style={styles.actionButtonText}>AI Goal</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
-      {loggedNutrients.length > 0 ? (
-        <FlatList
-          data={loggedNutrients}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={[globalStyles.logItem, styles.logItem]}>
-              <Text style={styles.logItemName}>{item.name}</Text>
-              <Text style={styles.logItemAmount}>{item.amount} {item.unit}</Text>
-              <Text style={styles.logItemPercentage}>
-                {getPercentage(item.nutrientId)}% of daily
-              </Text>
-            </View>
-          )}
-        />
-      ) : (
-        <Text style={[globalStyles.emptyText, styles.emptyText]}>
-          No nutrients logged today. Tap "Log Nutrients" to get started!
-        </Text>
-      )}
+      {/* Today's Intake Section */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Today's Intake</Text>
+          <Text style={styles.sectionSubtitle}>
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "short",
+              day: "numeric",
+            })}
+          </Text>
+        </View>
+
+        {loggedNutrients.length > 0 ? (
+          <FlatList
+            data={loggedNutrients}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const percentage = getPercentage(item.nutrientId)
+              return (
+                <View style={styles.logItem}>
+                  <View style={styles.logItemHeader}>
+                    <Text style={styles.logItemName}>{item.name}</Text>
+                    <Text style={styles.logItemAmount}>
+                      {item.amount} {item.unit}
+                    </Text>
+                  </View>
+
+                  <View style={styles.progressBarContainer}>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        { width: `${Math.min(percentage, 100)}%` },
+                        percentage > 100
+                          ? styles.progressBarExceeded
+                          : percentage >= 80
+                            ? styles.progressBarNearComplete
+                            : null,
+                      ]}
+                    />
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.logItemPercentage,
+                      percentage > 100
+                        ? styles.percentageExceeded
+                        : percentage >= 80
+                          ? styles.percentageNearComplete
+                          : null,
+                    ]}
+                  >
+                    {percentage}% of daily goal
+                  </Text>
+                </View>
+              )
+            }}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="food-off" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>No nutrients logged today</Text>
+            <Text style={styles.emptySubtext}>Tap "Log Nutrients" to get started!</Text>
+          </View>
+        )}
+      </View>
 
       {/* ✅ AI Goal Modal - Updated with Sex, Height, Weight inputs */}
       <Modal animationType="slide" transparent visible={aiGoalModalVisible}>
@@ -352,12 +419,20 @@ export default function NutrientLogScreen() {
 
       {/* Nutrient Selection Modal */}
       <Modal animationType="slide" transparent visible={modalVisible}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={[globalStyles.modalContainer, styles.modalContainer]}
-        >
-          <View style={[globalStyles.modalContent, styles.modalContent]}>
-            <Text style={globalStyles.modalTitle}>Log a Nutrient</Text>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Log a Nutrient</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => {
+                  setSelectedNutrient(null)
+                  setModalVisible(false)
+                }}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
 
             {selectedNutrient ? (
               <View style={styles.amountContainer}>
@@ -372,16 +447,10 @@ export default function NutrientLogScreen() {
                   onChangeText={setAmount}
                 />
                 <View style={styles.modalButtonsRow}>
-                  <TouchableOpacity 
-                    style={[globalStyles.modalButton, styles.cancelButton]}
-                    onPress={() => setSelectedNutrient(null)}
-                  >
+                  <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedNutrient(null)}>
                     <Text style={styles.cancelButtonText}>Back</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[globalStyles.modalButton, styles.confirmButton]}
-                    onPress={handleLogNutrient}
-                  >
+                  <TouchableOpacity style={styles.confirmButton} onPress={handleLogNutrient}>
                     <Text style={styles.confirmButtonText}>Log Nutrient</Text>
                   </TouchableOpacity>
                 </View>
@@ -389,40 +458,36 @@ export default function NutrientLogScreen() {
             ) : (
               <FlatList
                 data={nutrients}
-                keyExtractor={item => item.id}
+                keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={styles.nutrientItem}
-                    onPress={() => handleSelectNutrient(item)}
-                  >
+                  <TouchableOpacity style={styles.nutrientItem} onPress={() => handleSelectNutrient(item)}>
                     <Text style={styles.nutrientItemName}>{item.name}</Text>
                     <Text style={styles.nutrientItemType}>{item.type}</Text>
                   </TouchableOpacity>
                 )}
+                showsVerticalScrollIndicator={false}
               />
             )}
-
-            <TouchableOpacity 
-              style={[globalStyles.closeButton, styles.closeButton]}
-              onPress={() => {
-                setSelectedNutrient(null);
-                setModalVisible(false);
-              }}
-            >
-              <Text style={styles.closeButtonText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
       {/* Custom Goal Modal */}
       <Modal animationType="slide" transparent visible={customGoalModalVisible}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={[globalStyles.modalContainer, styles.modalContainer]}
-        >
-          <View style={[globalStyles.modalContent, styles.modalContent]}>
-            <Text style={globalStyles.modalTitle}>Set Custom Goal</Text>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Set Custom Goal</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => {
+                  setSelectedGoalNutrient(null)
+                  setCustomGoalModalVisible(false)
+                }}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
 
             {selectedGoalNutrient ? (
               <View style={styles.amountContainer}>
@@ -437,16 +502,10 @@ export default function NutrientLogScreen() {
                   onChangeText={setGoalAmount}
                 />
                 <View style={styles.modalButtonsRow}>
-                  <TouchableOpacity 
-                    style={[globalStyles.modalButton, styles.cancelButton]}
-                    onPress={() => setSelectedGoalNutrient(null)}
-                  >
+                  <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedGoalNutrient(null)}>
                     <Text style={styles.cancelButtonText}>Back</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[globalStyles.modalButton, styles.confirmButton]}
-                    onPress={handleSetCustomGoal}
-                  >
+                  <TouchableOpacity style={styles.confirmButton} onPress={handleSetCustomGoal}>
                     <Text style={styles.confirmButtonText}>Set Goal</Text>
                   </TouchableOpacity>
                 </View>
@@ -454,225 +513,265 @@ export default function NutrientLogScreen() {
             ) : (
               <FlatList
                 data={nutrients}
-                keyExtractor={item => item.id}
+                keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={styles.nutrientItem}
-                    onPress={() => handleSelectGoalNutrient(item)}
-                  >
+                  <TouchableOpacity style={styles.nutrientItem} onPress={() => handleSelectGoalNutrient(item)}>
                     <Text style={styles.nutrientItemName}>{item.name}</Text>
                     <Text style={styles.nutrientItemType}>{item.type}</Text>
                   </TouchableOpacity>
                 )}
+                showsVerticalScrollIndicator={false}
               />
             )}
-
-            <TouchableOpacity 
-              style={[globalStyles.closeButton, styles.closeButton]}
-              onPress={() => {
-                setSelectedGoalNutrient(null);
-                setCustomGoalModalVisible(false);
-              }}
-            >
-              <Text style={styles.closeButtonText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
-  overrideContainer: {
-    // Add any container overrides here
-  },
-  overrideTitle: {
-    // Add any title overrides here
-  },
-  // ✅ AI Goal Button Styles
-  aiGoalButton: {
-    backgroundColor: '#8A2BE2', // Purple AI button
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  aiGoalButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  aiInfoText: {
-    fontSize: 16,
-    marginVertical: 15,
-    lineHeight: 22,
-  },
-  aiRecommendationsContainer: {
-    marginVertical: 15,
-    padding: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-  },
-  // ✅ Styles for the new metric inputs
-  metricInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 5,
-  },
-  metricLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    width: 100,
-  },
-  metricInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-  },
-  placeholderText: {
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 20,
-    fontStyle: 'italic',
-  },
-  customGoalButton: {
-    backgroundColor: '#007BFF', // Blue color for custom goal
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  customGoalButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  logButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: '#888',
-  },
-  logItem: {
-    backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  logItemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  logItemAmount: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  logItemPercentage: {
-    fontSize: 14,
-    color: '#4CAF50',
-    marginTop: 4,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  amountContainer: {
-    padding: 15,
-  },
-  selectedNutrientText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  amountInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-  },
-  modalButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cancelButton: {
-    backgroundColor: '#f0f0f0',
-    flex: 1,
-    marginRight: 10,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#333',
-  },
-  confirmButton: {
-    backgroundColor: '#4CAF50',
-    flex: 1,
-    marginLeft: 10,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  confirmButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    marginTop: 15,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-  },
-  closeButtonText: {
-    color: '#333',
-  },
-  nutrientItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  nutrientItemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  nutrientItemType: {
-    fontSize: 14,
-    color: '#777',
-    marginTop: 2,
-  },
-});
+	container: {
+	  flex: 1,
+	  backgroundColor: "#f5f5f5",
+	},
+	header: {
+	  backgroundColor: "#BBDBD1",
+	  paddingVertical: 16,
+	  paddingHorizontal: 20,
+	  borderBottomLeftRadius: 20,
+	  borderBottomRightRadius: 20,
+	  shadowColor: "#000",
+	  shadowOffset: { width: 0, height: 2 },
+	  shadowOpacity: 0.1,
+	  shadowRadius: 4,
+	  elevation: 3,
+	},
+	headerTitle: {
+	  fontSize: 24,
+	  fontWeight: "bold",
+	  color: "#333",
+	  textAlign: "center",
+	},
+	actionButtonsContainer: {
+	  flexDirection: "row",
+	  justifyContent: "space-between",
+	  padding: 16,
+	  marginTop: 8,
+	},
+	actionButton: {
+	  flex: 1,
+	  backgroundColor: "#BBDBD1",
+	  borderRadius: 12,
+	  padding: 12,
+	  marginHorizontal: 4,
+	  shadowColor: "#000",
+	  shadowOffset: { width: 0, height: 1 },
+	  shadowOpacity: 0.1,
+	  shadowRadius: 2,
+	  elevation: 2,
+	},
+	actionButtonInner: {
+	  alignItems: "center",
+	  justifyContent: "center",
+	},
+	actionButtonText: {
+	  color: "#fff",
+	  fontWeight: "bold",
+	  marginTop: 4,
+	  fontSize: 12,
+	  textAlign: "center",
+	},
+	goalButton: {
+	  backgroundColor: "#5E8B7E", // Darker shade of the mint green
+	},
+	aiButton: {
+	  backgroundColor: "#2A6877", // Blue-green color
+	},
+	sectionContainer: {
+	  flex: 1,
+	  padding: 16,
+	},
+	sectionHeader: {
+	  marginBottom: 16,
+	},
+	sectionTitle: {
+	  fontSize: 20,
+	  fontWeight: "bold",
+	  color: "#333",
+	},
+	sectionSubtitle: {
+	  fontSize: 14,
+	  color: "#888",
+	  marginTop: 4,
+	},
+	listContent: {
+	  paddingBottom: 20,
+	},
+	logItem: {
+	  backgroundColor: "white",
+	  padding: 16,
+	  borderRadius: 12,
+	  marginBottom: 12,
+	  shadowColor: "#000",
+	  shadowOffset: { width: 0, height: 1 },
+	  shadowOpacity: 0.1,
+	  shadowRadius: 2,
+	  elevation: 2,
+	},
+	logItemHeader: {
+	  flexDirection: "row",
+	  justifyContent: "space-between",
+	  alignItems: "center",
+	  marginBottom: 8,
+	},
+	logItemName: {
+	  fontSize: 16,
+	  fontWeight: "bold",
+	  color: "#333",
+	},
+	logItemAmount: {
+	  fontSize: 14,
+	  color: "#666",
+	  fontWeight: "500",
+	},
+	progressBarContainer: {
+	  height: 8,
+	  backgroundColor: "#f0f0f0",
+	  borderRadius: 4,
+	  marginBottom: 8,
+	  overflow: "hidden",
+	},
+	progressBar: {
+	  height: "100%",
+	  backgroundColor: "#BBDBD1",
+	  borderRadius: 4,
+	},
+	progressBarNearComplete: {
+	  backgroundColor: "#5E8B7E",
+	},
+	progressBarExceeded: {
+	  backgroundColor: "#E67E22",
+	},
+	logItemPercentage: {
+	  fontSize: 12,
+	  color: "#888",
+	  textAlign: "right",
+	},
+	percentageNearComplete: {
+	  color: "#5E8B7E",
+	  fontWeight: "500",
+	},
+	percentageExceeded: {
+	  color: "#E67E22",
+	  fontWeight: "500",
+	},
+	emptyContainer: {
+	  flex: 1,
+	  justifyContent: "center",
+	  alignItems: "center",
+	  padding: 20,
+	},
+	emptyText: {
+	  fontSize: 18,
+	  fontWeight: "500",
+	  color: "#666",
+	  marginTop: 16,
+	  textAlign: "center",
+	},
+	emptySubtext: {
+	  fontSize: 14,
+	  color: "#888",
+	  marginTop: 8,
+	  textAlign: "center",
+	},
+	modalContainer: {
+	  flex: 1,
+	  justifyContent: "flex-end",
+	  backgroundColor: "rgba(0,0,0,0.5)",
+	},
+	modalContent: {
+	  backgroundColor: "white",
+	  borderTopLeftRadius: 20,
+	  borderTopRightRadius: 20,
+	  padding: 20,
+	  maxHeight: "80%",
+	},
+	modalHeader: {
+	  flexDirection: "row",
+	  justifyContent: "space-between",
+	  alignItems: "center",
+	  marginBottom: 16,
+	  paddingBottom: 16,
+	  borderBottomWidth: 1,
+	  borderBottomColor: "#f0f0f0",
+	},
+	modalTitle: {
+	  fontSize: 20,
+	  fontWeight: "bold",
+	  color: "#333",
+	},
+	modalCloseButton: {
+	  padding: 4,
+	},
+	amountContainer: {
+	  padding: 16,
+	},
+	selectedNutrientText: {
+	  fontSize: 18,
+	  fontWeight: "bold",
+	  color: "#333",
+	  marginBottom: 16,
+	},
+	amountInput: {
+	  borderWidth: 1,
+	  borderColor: "#BBDBD1",
+	  borderRadius: 12,
+	  padding: 16,
+	  marginBottom: 20,
+	  fontSize: 16,
+	  backgroundColor: "#F9FCFB",
+	},
+	modalButtonsRow: {
+	  flexDirection: "row",
+	  justifyContent: "space-between",
+	  gap: 12,
+	},
+	cancelButton: {
+	  flex: 1,
+	  backgroundColor: "#f0f0f0",
+	  padding: 16,
+	  borderRadius: 12,
+	  alignItems: "center",
+	},
+	cancelButtonText: {
+	  color: "#666",
+	  fontWeight: "600",
+	},
+	confirmButton: {
+	  flex: 1,
+	  backgroundColor: "#BBDBD1",
+	  padding: 16,
+	  borderRadius: 12,
+	  alignItems: "center",
+	},
+	confirmButtonText: {
+	  color: "#fff",
+	  fontWeight: "bold",
+	},
+	nutrientItem: {
+	  padding: 16,
+	  borderBottomWidth: 1,
+	  borderBottomColor: "#f0f0f0",
+	},
+	nutrientItemName: {
+	  fontSize: 16,
+	  fontWeight: "bold",
+	  color: "#333",
+	},
+	nutrientItemType: {
+	  fontSize: 14,
+	  color: "#888",
+	  marginTop: 4,
+	},
+  })

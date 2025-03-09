@@ -14,13 +14,19 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+	  "infoPlist": {
+		"NSAppTransportSecurity": { 
+			"NSAllowsArbitraryLoads": true 
+			}
+		}
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+	  "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -28,7 +34,12 @@
 	  "output": "server"
     },
     "plugins": [
-      "expo-router"
+		[
+			"expo-router",
+			{
+				"origin": "http://localhost:8069"
+			}
+		]
     ]
   }
 }
