@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -8,11 +8,12 @@ export default function SetupScreen() {
   const router = useRouter(); // For navigation
 
   // Local state to store form values
-  const [gender, setGender] = useState(userData.gender || '');
-  const [height, setHeight] = useState(userData.height || '');
-  const [weight, setWeight] = useState(userData.weight || '');
-  const [dob, setDob] = useState(userData.dob || '');
-  const [rank, setRank] = useState(userData.rank || '1');
+  const [gender, setGender] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [dob, setDob] = useState('');
+  const [rank, setRank] = useState('1');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Format date for display
   const formatDate = (date) => {
@@ -112,5 +113,22 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     width: '100%',
     backgroundColor: '#fff',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#555',
+    marginBottom: 5,
+  },
+  datePickerButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  dateText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
