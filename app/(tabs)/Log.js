@@ -78,6 +78,10 @@ export default function NutrientLogScreen() {
       const currentValue = await getItem(selectedNutrient.name.toLowerCase()) || 0;
       const newValue = currentValue + amountValue;
       await setItem(selectedNutrient.name.toLowerCase(), newValue);
+      
+      // Debug: Log all stored data
+      const storedData = await getAllItems();
+      console.log(JSON.stringify(storedData, null, 2));
     } catch (error) {
       console.error('Error saving nutrient log:', error);
     }
@@ -326,7 +330,12 @@ export default function NutrientLogScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Existing styles...
+  overrideContainer: {
+    // Add any container overrides here
+  },
+  overrideTitle: {
+    // Add any title overrides here
+  },
   customGoalButton: {
     backgroundColor: '#007BFF', // Blue color for custom goal
     padding: 15,

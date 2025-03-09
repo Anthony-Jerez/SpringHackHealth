@@ -19,14 +19,16 @@ const LevelAnimation = ({ level }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 200, // Explicitly define width
+    height: 200, // Explicitly define height
   },
   animation: {
-    width: 200,
-    height: 200,
+    width: 150, // Restrict animation size
+    height: 150,
   },
 });
+
 
 export default LevelAnimation;
