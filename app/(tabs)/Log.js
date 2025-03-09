@@ -22,12 +22,17 @@ export default function NutrientLogScreen() {
   const [amount, setAmount] = useState('');
   const [loggedNutrients, setLoggedNutrients] = useState([]);
 
-  // New states for custom goal
+  // States for setting custom goals
   const [customGoalModalVisible, setCustomGoalModalVisible] = useState(false);
   const [selectedGoalNutrient, setSelectedGoalNutrient] = useState(null);
   const [goalAmount, setGoalAmount] = useState('');
 
 	const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
+  
+  // ✅ Added states for user metrics
+  const [sex, setSex] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
 
   // Load logged nutrients on mount
   useEffect(() => {
@@ -83,6 +88,10 @@ export default function NutrientLogScreen() {
       const currentValue = await getItem(selectedNutrient.name.toLowerCase()) || 0;
       const newValue = currentValue + amountValue;
       await setItem(selectedNutrient.name.toLowerCase(), newValue);
+      
+      // Debug: Log all stored data
+      const storedData = await getAllItems();
+      console.log(JSON.stringify(storedData, null, 2));
     } catch (error) {
       console.error('Error saving nutrient log:', error);
     }
@@ -92,7 +101,7 @@ export default function NutrientLogScreen() {
     setModalVisible(false);
   };
 
-  // New function to handle setting custom goals
+  // Function to handle setting custom goals
   const handleSetCustomGoal = async () => {
     if (!selectedGoalNutrient || !goalAmount) return;
     
@@ -332,6 +341,81 @@ export default function NutrientLogScreen() {
           </View>
         )}
       </View>
+
+      {/* ✅ AI Goal Modal - Updated with Sex, Height, Weight inputs */}
+      <Modal animationType="slide" transparent visible={aiGoalModalVisible}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={[globalStyles.modalContainer, styles.modalContainer]}
+        >
+          <View style={[globalStyles.modalContent, styles.modalContent]}>
+            <Text style={globalStyles.modalTitle}>AI Recommended Goals</Text>
+            
+            <Text style={styles.aiInfoText}>
+              Please provide your information to get personalized nutrition goals:
+            </Text>
+            
+            <View style={styles.aiRecommendationsContainer}>
+              {/* Sex Input */}
+              <View style={styles.metricInputContainer}>
+                <Text style={styles.metricLabel}>Sex:</Text>
+                <TextInput
+                  style={styles.metricInput}
+                  placeholder="Male/Female"
+                  value={sex}
+                  onChangeText={setSex}
+                />
+              </View>
+              
+              {/* Height Input */}
+              <View style={styles.metricInputContainer}>
+                <Text style={styles.metricLabel}>Height (cm):</Text>
+                <TextInput
+                  style={styles.metricInput}
+                  placeholder="e.g., 175"
+                  keyboardType="numeric"
+                  value={height}
+                  onChangeText={setHeight}
+                />
+              </View>
+              
+              {/* Weight Input */}
+              <View style={styles.metricInputContainer}>
+                <Text style={styles.metricLabel}>Weight (kg):</Text>
+                <TextInput
+                  style={styles.metricInput}
+                  placeholder="e.g., 70"
+                  keyboardType="numeric"
+                  value={weight}
+                  onChangeText={setWeight}
+                />
+              </View>
+            </View>
+            
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity 
+                style={[globalStyles.modalButton, styles.cancelButton]}
+                onPress={() => setAiGoalModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[globalStyles.modalButton, styles.confirmButton]}
+                onPress={handleGenerateAiGoal}
+              >
+                <Text style={styles.confirmButtonText}>Generate Goals</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              style={[globalStyles.closeButton, styles.closeButton]}
+              onPress={() => setAiGoalModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Nutrient Selection Modal */}
       <Modal animationType="slide" transparent visible={modalVisible}>
