@@ -19,6 +19,50 @@ export default function WelcomeView() {
   const [visibleNutrients, setVisibleNutrients] = useState([]);
   const [nutrientData, setNutrientData] = useState({});
 
+  const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
+  const [aiGoal, setAIGoal] = useState(''); // State for AI goal
+  
+  useEffect(() => {
+    // Load visible nutrients from AsyncStorage
+    const loadVisibleNutrients = async () => {
+      try {
+        const nutrients = await getItem('visibleNutrients');
+        if (nutrients) {
+          setVisibleNutrients(nutrients);
+        }
+      } catch (error) {
+        console.error('Error loading visible nutrients:', error);
+      }
+    };
+    
+    loadVisibleNutrients();
+    const interval = setInterval(loadVisibleNutrients, 2000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Function to fetch & process data
+	const fetchData = async () => {
+		const storedData = await getAllItems();
+		console.log("Stored Data:", storedData); // Debugging
+
+		const storedAIGoal = await getItem("AI-Generated-Goal");
+		if (storedAIGoal) {
+			setAIGoal(storedAIGoal);
+		}
+
+		// 1️⃣ Aggregate `loggedNutrients` to sum amounts by `nutrientId`
+		const aggregatedNutrients = {};
+		if (storedData.loggedNutrients) {
+			storedData.loggedNutrients.forEach((log) => {
+				const nutrientKey = log.nutrientId.toLowerCase().trim(); // Normalize key
+				const amount = parseFloat(log.amount) || 0;
+
+				if (trackedNutrients.includes(nutrientKey)) {
+					aggregatedNutrients[nutrientKey] = (aggregatedNutrients[nutrientKey] || 0) + amount;
+				}
+			});
+		}
+
   // Extract valid nutrient IDs from the nutrients data
   const trackedNutrients = nutrients.map(n => n.id.toLowerCase());
 
@@ -90,78 +134,152 @@ export default function WelcomeView() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+		<SafeAreaView style={styles.container}>
+			<StatusBar style="dark" />
+			{/* Header Section */}
+			<View style={styles.header}>
+				<Animated.View entering={FadeIn.duration(800)}>
+					<View style={styles.userInfoContainer}>
+						<Animated.View
+							entering={FadeInDown.duration(1000).delay(200)}
+						>
+							<Avatar.Image
+								size={60}
+								source={{
+									uri: 'https://api.dicebear.com/9.x/pixel-art/png?seed=Brian', // expo doesn't natively support svg so png instead
+								}}
+								style={styles.avatar}
+							/>
+						</Animated.View>
 
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Animated.View entering={FadeIn.duration(800)}>
-          <View style={styles.userInfoContainer}>
-            <Animated.View entering={FadeInDown.duration(1000).delay(200)}>
-              <Avatar.Image
-                size={60}
-                source={{
-                  uri: `https://api.dicebear.com/9.x/pixel-art/png?seed=${user?.username || 'User'}`,
-                }}
-                style={styles.avatar}
-              />
-            </Animated.View>
+						<View style={styles.userTextContainer}>
+							<Text style={styles.welcomeText}>Welcome back</Text>
+							<Text style={styles.usernameText}>
+								{user?.username || 'User'}
+							</Text>
+						</View>
+					</View>
+				</Animated.View>
 
-            <View style={styles.userTextContainer}>
-              <Text style={styles.welcomeText}>Welcome back</Text>
-              <Text style={styles.usernameText}>
-                {user?.username || 'User'}
-              </Text>
-            </View>
-          </View>
-        </Animated.View>
+				<SignOutButton />
+			</View>
 
-        <SignOutButton />
-      </View>
+			{/* Main Content */}
+			<ScrollView
+				contentContainerStyle={styles.scrollContainer}
+				showsVerticalScrollIndicator={false}
+			>
+				{/* Dashboard Card */}
+				<Animated.View
+					style={styles.dashboardCard}
+					entering={FadeInDown.duration(800).delay(300)}
+				>
+					<View style={styles.cardHeader}>
+						<Text style={styles.cardTitle}>
+							Your Nutrition Dashboard
+						</Text>
+						<Text style={styles.cardSubtitle}>
+							Daily nutrient tracking
+						</Text>
+					</View>
 
-      {/* Main Content */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View style={styles.dashboardCard} entering={FadeInDown.duration(800).delay(300)}>
-          {/* Dashboard Header with Clear Button */}
-          <View style={styles.dashboardHeader}>
-            <Text style={styles.cardTitle}>Your Nutrition Dashboard</Text>
-            <TouchableOpacity style={styles.clearButton} onPress={handleClearStorage}>
-              <Text style={styles.clearButtonText}>Clear All</Text>
-            </TouchableOpacity>
-          </View>
+					{/* Level Display */}
+					<View style={styles.levelContainer}>
+						<LevelAnimation level={1} />
+					</View>
 
-          <View style={styles.levelContainer}>
-            <LevelAnimation level={1} />
-          </View>
+					{/* Nutrient goals from user */}
+					{visibleNutrients.length > 0 ? (
+						<View style={styles.statsContainer}>
+							<Text style={styles.sectionTitle}>
+								Your Nutrient Goals
+							</Text>
+							{visibleNutrients.map((nutrient) => (
+								<View
+									key={nutrient.id}
+									style={styles.statBarWrapper}
+								>
+									<StatsBar
+										label={`${nutrient.name} (${nutrient.unit})`}
+										storageKey={nutrient.name.toLowerCase()}
+										maxValue={nutrient.maxValue}
+									/>
+									<TouchableOpacity
+										style={styles.removeButton}
+										onPress={() =>
+											handleRemoveNutrient(nutrient.id)
+										}
+									>
+										<Text style={styles.removeButtonText}>
+											×
+										</Text>
+									</TouchableOpacity>
+								</View>
+							))}
+						</View>
+					) : (
+						<View style={styles.emptyContainer}>
+							<Text style={styles.emptyText}>
+								No custom nutrient goals set yet. Go to the
+								"Log" tab and tap "Set Custom Goal" to get
+								started!
+							</Text>
+						</View>
+					)}
 
-          {/* Custom Nutrient Goals */}
-          {visibleNutrients.length > 0 ? (
-            <View style={styles.statsSection}>
-              <Text style={styles.sectionTitle}>Your Custom Nutrient Goals</Text>
-              <View style={styles.statsContainer}>
-                {visibleNutrients.map((nutrient) => (
-                  <StatsBar
-                    key={nutrient.id}
-                    label={`${nutrient.name} (${nutrient.unit})`}
-                    value={nutrientData[nutrient.id.toLowerCase()] || 0}
-                    maxValue={nutrient.maxValue}
-                  />
-                ))}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateText}>
-                No custom nutrient goals set yet.
-              </Text>
-            </View>
-          )}
-        </Animated.View>
-      </ScrollView>
-    </SafeAreaView>
+					{/* ✅ AI-Generated Goal Section */}
+					<View style={styles.aiGoalContainer}>
+						<Text style={styles.sectionTitle}>AI-Generated Goal</Text>
+						{aiGoal ? (
+							<Text style={styles.aiGoalText}>{aiGoal}</Text>
+						) : (
+							<Text style={styles.emptyText}>No AI goal generated yet.</Text>
+						)}
+					</View>
+
+					{/* Stats Section */}
+					<View style={styles.statsSection}>
+						<Text style={styles.sectionTitle}>
+							Today's Nutrients
+						</Text>
+
+						<View style={styles.statsContainer}>
+							{Object.entries(nutrientData).length > 0 ? (
+								Object.entries(nutrientData).map(
+									([key, value]) => {
+										const nutrient = nutrients.find(
+											(n) => n.id === key
+										);
+										return nutrient ? (
+											<StatsBar
+												key={key}
+												label={nutrient.name}
+												value={value}
+												maxValue={
+													nutrient.recommendedDaily
+												}
+											/>
+										) : null;
+									}
+								)
+							) : (
+								<View style={styles.emptyStateContainer}>
+									<Text style={styles.emptyStateText}>
+										No nutrients logged yet today.
+									</Text>
+									<Text style={styles.emptyStateSubtext}>
+										Add nutrients to see your progress!
+									</Text>
+								</View>
+							)}
+						</View>
+					</View>
+				</Animated.View>
+
+				{/* Add extra spacing below */}
+				<View style={{ height: 20 }} />
+			</ScrollView>
+		</SafeAreaView>
   );
 }
 

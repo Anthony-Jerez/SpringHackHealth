@@ -17,7 +17,8 @@ export default function SetupScreen() {
 
   // Format date for display
   const formatDate = (date) => {
-    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+    // return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+	return 'test'
   };
 
   // Show date picker
