@@ -208,7 +208,7 @@ export default function NutrientLogScreen() {
 		const baseUrl = 
       		manifest?.debuggerHost?.split(':').shift() || 'localhost';
 
-		const apiUrl = `http://bzywtj0-anonymous-8069.exp.direct/api/goal`;
+		const apiUrl = `http://localhost:8081/api/goal`;
     	console.log('Attempting to fetch from:', apiUrl);
 
 		const response = await fetch(apiUrl, {
