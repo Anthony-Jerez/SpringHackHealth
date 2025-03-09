@@ -2,7 +2,6 @@ import React from 'react';
 import LottieView from 'lottie-react-native';
 import { View, StyleSheet } from 'react-native';
 import { levelAnimation } from '../../animation';
-import { useRef } from 'react';
 
 const LevelAnimation = ({ level }) => {
   return (
@@ -12,6 +11,7 @@ const LevelAnimation = ({ level }) => {
         autoPlay
         loop
         style={styles.animation}
+        resizeMode="contain" // Prevents stretching
       />
     </View>
   );
@@ -19,13 +19,15 @@ const LevelAnimation = ({ level }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: 120, // Fixed width
+    height: 120, // Fixed height
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden', // Prevents any overflow
   },
   animation: {
-    width: 200,
-    height: 200,
+    width: 100, // Set a max width for animation
+    height: 100, // Set a max height
   },
 });
 
