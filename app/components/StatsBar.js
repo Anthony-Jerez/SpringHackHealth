@@ -1,3 +1,5 @@
+// In StatsBar.js - Update to handle removals
+
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 import { useEffect, useState } from 'react';
@@ -5,8 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // StatsBar Component
 export default function StatsBar({ label, storageKey, maxValue, value: propValue }) {
-
-	const [value, setValue] = useState(propValue || 0);
+  const [value, setValue] = useState(propValue || 0);
 
   // Use either the prop value or fetch from AsyncStorage
   useEffect(() => {
