@@ -1,3 +1,4 @@
+// In HomeScreen.js
 import { StyleSheet, View } from 'react-native';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
 import { globalStyles } from '../styles/globalStyles';
@@ -5,11 +6,10 @@ import LandingView from '../components/LandingView';
 import WelcomeView from '../components/WelcomeView';
 
 export default function HomeScreen() {
-
   return (
     <View style={globalStyles.container}>
       <SignedIn>
-		<WelcomeView />
+        <WelcomeView />
       </SignedIn>
 
       <SignedOut>
@@ -56,5 +56,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
- 
 });

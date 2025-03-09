@@ -12,95 +12,130 @@ import { getItem, setItem, getAllItems } from '../utils/AsyncStorage';
 
 export default function NutrientLogScreen() {
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useAuth(); // ✅ Prevent premature navigation
+  const { isSignedIn, isLoaded } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedNutrient, setSelectedNutrient] = useState(null);
   const [amount, setAmount] = useState('');
   const [loggedNutrients, setLoggedNutrients] = useState([]);
 
-	// Load logged nutrients on mount
-	useEffect(() => {
-		const loadLoggedNutrients = async () => {
-		  try {
-			const storedLogs = await getItem('loggedNutrients');
-			if (storedLogs) {
-			  setLoggedNutrients(storedLogs);
-			}
-		  } catch (error) {
-			console.error('Error loading nutrient logs:', error);
-		  }
-		};
-	
-		loadLoggedNutrients();
-	  }, []);
+  // New states for custom goal
+  const [customGoalModalVisible, setCustomGoalModalVisible] = useState(false);
+  const [selectedGoalNutrient, setSelectedGoalNutrient] = useState(null);
+  const [goalAmount, setGoalAmount] = useState('');
+
+  // Load logged nutrients on mount
+  useEffect(() => {
+    const loadLoggedNutrients = async () => {
+      try {
+        const storedLogs = await getItem('loggedNutrients');
+        if (storedLogs) {
+          setLoggedNutrients(storedLogs);
+        }
+      } catch (error) {
+        console.error('Error loading nutrient logs:', error);
+      }
+    };
+
+    loadLoggedNutrients();
+  }, []);
 
   useEffect(() => {
-    if (!isLoaded) return; // ✅ Prevents premature navigation
+    if (!isLoaded) return;
     if (!isSignedIn) {
-      router.replace('/'); // ✅ Redirect unauthorized users
+      router.replace('/');
     }
   }, [isSignedIn, isLoaded]);
 
-  // Prevents rendering while Clerk is still determining authentication status
   if (!isLoaded || !isSignedIn) return null;
 
   const handleSelectNutrient = (nutrient) => setSelectedNutrient(nutrient);
+  const handleSelectGoalNutrient = (nutrient) => setSelectedGoalNutrient(nutrient);
 
-//   const handleLogNutrient = () => {
-//     if (!selectedNutrient || !amount) return;
+  const handleLogNutrient = async () => {
+    if (!selectedNutrient || !amount) return;
     
-//     const newLogEntry = {
-//       id: Date.now().toString(),
-//       nutrientId: selectedNutrient.id,
-//       name: selectedNutrient.name,
-//       amount: parseFloat(amount),
-//       unit: selectedNutrient.unit,
-//       timestamp: new Date(),
-//     };
+    const amountValue = parseFloat(amount);
+    
+    const newLogEntry = {
+      id: Date.now().toString(),
+      nutrientId: selectedNutrient.id,
+      name: selectedNutrient.name,
+      amount: amountValue,
+      unit: selectedNutrient.unit,
+      timestamp: new Date(),
+    };
 
-//     setLoggedNutrients([...loggedNutrients, newLogEntry]);
-//     setSelectedNutrient(null);
-//     setAmount('');
-//     setModalVisible(false);
-//   };
+    // Update logs array
+    const updatedLogs = [...loggedNutrients, newLogEntry];
+    setLoggedNutrients(updatedLogs);
 
-const handleLogNutrient = async () => {
-  if (!selectedNutrient || !amount) return;
-  
-  const amountValue = parseFloat(amount);
-  
-  const newLogEntry = {
-	id: Date.now().toString(),
-	nutrientId: selectedNutrient.id,
-	name: selectedNutrient.name,
-	amount: amountValue,
-	unit: selectedNutrient.unit,
-	timestamp: new Date(),
+    try {
+      // Save to AsyncStorage - both the logs and the individual nutrient value
+      await setItem('loggedNutrients', updatedLogs);
+      
+      // Update or create the individual nutrient entry for the StatsBar
+      const currentValue = await getItem(selectedNutrient.name.toLowerCase()) || 0;
+      const newValue = currentValue + amountValue;
+      await setItem(selectedNutrient.name.toLowerCase(), newValue);
+      
+      // Debug: Log all stored data
+      const storedData = await getAllItems();
+      console.log(JSON.stringify(storedData, null, 2));
+    } catch (error) {
+      console.error('Error saving nutrient log:', error);
+    }
+
+    setSelectedNutrient(null);
+    setAmount('');
+    setModalVisible(false);
   };
 
-  // Update logs array
-  const updatedLogs = [...loggedNutrients, newLogEntry];
-  setLoggedNutrients(updatedLogs);
-
-  try {
-	// Save to AsyncStorage - both the logs and the individual nutrient value
-	await setItem('loggedNutrients', updatedLogs);
-	
-	// Update or create the individual nutrient entry for the StatsBar
-	const currentValue = await getItem(selectedNutrient.name.toLowerCase()) || 0;
-	const newValue = currentValue + amountValue;
-	await setItem(selectedNutrient.name.toLowerCase(), newValue);
-  } catch (error) {
-	console.error('Error saving nutrient log:', error);
-  }
-
-  const storedData = await getAllItems();
-  console.log(JSON.stringify(storedData, null, 2));
-  
-  setSelectedNutrient(null);
-  setAmount('');
-  setModalVisible(false);
-};
+  // New function to handle setting custom goals
+  const handleSetCustomGoal = async () => {
+    if (!selectedGoalNutrient || !goalAmount) return;
+    
+    const goalValue = parseFloat(goalAmount);
+    if (isNaN(goalValue) || goalValue <= 0) return;
+    
+    try {
+      // Store the custom goal in AsyncStorage with a specific key format
+      const goalKey = `${selectedGoalNutrient.id}-goal`;
+      await setItem(goalKey, goalValue);
+      
+      // Store visible nutrient goals for StatsBar display
+      const visibleNutrients = await getItem('visibleNutrients') || [];
+      
+      // Check if this nutrient is already in the visible list
+      if (!visibleNutrients.some(item => item.id === selectedGoalNutrient.id)) {
+        visibleNutrients.push({
+          id: selectedGoalNutrient.id,
+          name: selectedGoalNutrient.name,
+          unit: selectedGoalNutrient.unit,
+          maxValue: goalValue
+        });
+        await setItem('visibleNutrients', visibleNutrients);
+      } else {
+        // Update the existing entry
+        const updatedVisibleNutrients = visibleNutrients.map(item => {
+          if (item.id === selectedGoalNutrient.id) {
+            return {
+              ...item,
+              maxValue: goalValue
+            };
+          }
+          return item;
+        });
+        await setItem('visibleNutrients', updatedVisibleNutrients);
+      }
+      
+      // Reset the form and close the modal
+      setSelectedGoalNutrient(null);
+      setGoalAmount('');
+      setCustomGoalModalVisible(false);
+    } catch (error) {
+      console.error('Error saving custom goal:', error);
+    }
+  };
 
   const calculateDailyTotal = (nutrientId) => {
     const today = new Date().setHours(0, 0, 0, 0);
@@ -122,6 +157,14 @@ const handleLogNutrient = async () => {
   return (
     <SafeAreaView style={[globalStyles.container, styles.overrideContainer]}>
       <Text style={[globalStyles.title, styles.overrideTitle]}>Nutrient Tracker</Text>
+
+      {/* Custom Goal Button */}
+      <TouchableOpacity 
+        style={[globalStyles.authButton, styles.customGoalButton]} 
+        onPress={() => setCustomGoalModalVisible(true)}
+      >
+        <Text style={[globalStyles.authButtonText, styles.customGoalButtonText]}>Set Custom Goal</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity 
         style={[globalStyles.authButton, styles.logButton]} 
@@ -216,11 +259,94 @@ const handleLogNutrient = async () => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Custom Goal Modal */}
+      <Modal animationType="slide" transparent visible={customGoalModalVisible}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={[globalStyles.modalContainer, styles.modalContainer]}
+        >
+          <View style={[globalStyles.modalContent, styles.modalContent]}>
+            <Text style={globalStyles.modalTitle}>Set Custom Goal</Text>
+
+            {selectedGoalNutrient ? (
+              <View style={styles.amountContainer}>
+                <Text style={styles.selectedNutrientText}>
+                  {selectedGoalNutrient.name} ({selectedGoalNutrient.unit})
+                </Text>
+                <TextInput
+                  style={styles.amountInput}
+                  placeholder={`Goal amount in ${selectedGoalNutrient.unit}`}
+                  keyboardType="numeric"
+                  value={goalAmount}
+                  onChangeText={setGoalAmount}
+                />
+                <View style={styles.modalButtonsRow}>
+                  <TouchableOpacity 
+                    style={[globalStyles.modalButton, styles.cancelButton]}
+                    onPress={() => setSelectedGoalNutrient(null)}
+                  >
+                    <Text style={styles.cancelButtonText}>Back</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[globalStyles.modalButton, styles.confirmButton]}
+                    onPress={handleSetCustomGoal}
+                  >
+                    <Text style={styles.confirmButtonText}>Set Goal</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <FlatList
+                data={nutrients}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    style={styles.nutrientItem}
+                    onPress={() => handleSelectGoalNutrient(item)}
+                  >
+                    <Text style={styles.nutrientItemName}>{item.name}</Text>
+                    <Text style={styles.nutrientItemType}>{item.type}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+
+            <TouchableOpacity 
+              style={[globalStyles.closeButton, styles.closeButton]}
+              onPress={() => {
+                setSelectedGoalNutrient(null);
+                setCustomGoalModalVisible(false);
+              }}
+            >
+              <Text style={styles.closeButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  overrideContainer: {
+    // Add any container overrides here
+  },
+  overrideTitle: {
+    // Add any title overrides here
+  },
+  customGoalButton: {
+    backgroundColor: '#007BFF', // Blue color for custom goal
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  customGoalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   logButton: {
     backgroundColor: '#4CAF50',
     padding: 15,
@@ -346,4 +472,3 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-
