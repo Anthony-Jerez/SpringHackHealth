@@ -17,6 +17,7 @@ export default function WelcomeView() {
   const [visibleNutrients, setVisibleNutrients] = useState([]);
   const [nutrientData, setNutrientData] = useState({});
   const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
+  const [aiGoal, setAIGoal] = useState(''); // State for AI goal
   
   useEffect(() => {
     // Load visible nutrients from AsyncStorage
@@ -40,6 +41,11 @@ export default function WelcomeView() {
 	const fetchData = async () => {
 		const storedData = await getAllItems();
 		console.log("Stored Data:", storedData); // Debugging
+
+		const storedAIGoal = await getItem("AI-Generated-Goal");
+		if (storedAIGoal) {
+			setAIGoal(storedAIGoal);
+		}
 
 		// 1️⃣ Aggregate `loggedNutrients` to sum amounts by `nutrientId`
 		const aggregatedNutrients = {};
@@ -176,6 +182,16 @@ export default function WelcomeView() {
 							</Text>
 						</View>
 					)}
+
+					{/* ✅ AI-Generated Goal Section */}
+					<View style={styles.aiGoalContainer}>
+						<Text style={styles.sectionTitle}>AI-Generated Goal</Text>
+						{aiGoal ? (
+							<Text style={styles.aiGoalText}>{aiGoal}</Text>
+						) : (
+							<Text style={styles.emptyText}>No AI goal generated yet.</Text>
+						)}
+					</View>
 
 					{/* Stats Section */}
 					<View style={styles.statsSection}>

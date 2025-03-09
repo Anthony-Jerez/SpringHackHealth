@@ -10,6 +10,7 @@ import { nutrients } from './nutrientData';
 import { globalStyles } from '../styles/globalStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getItem, setItem, getAllItems } from '../utils/AsyncStorage';
+import Constants from 'expo-constants';
 
 export default function NutrientLogScreen() {
   const router = useRouter();
@@ -23,6 +24,8 @@ export default function NutrientLogScreen() {
   const [customGoalModalVisible, setCustomGoalModalVisible] = useState(false);
   const [selectedGoalNutrient, setSelectedGoalNutrient] = useState(null);
   const [goalAmount, setGoalAmount] = useState('');
+
+	const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
 
   // Load logged nutrients on mount
   useEffect(() => {
@@ -151,6 +154,78 @@ export default function NutrientLogScreen() {
     return Math.round((total / nutrient.recommendedDaily) * 100);
   };
 
+  const fetchData = async () => {
+		const storedData = await getAllItems();
+		console.log("Stored Data:", storedData); // Debugging
+  
+		// 1️⃣ Aggregate `loggedNutrients` to sum amounts by `nutrientId`
+		const aggregatedNutrients = {};
+		if (storedData.loggedNutrients) {
+			storedData.loggedNutrients.forEach((log) => {
+				const nutrientKey = log.nutrientId.toLowerCase().trim(); // Normalize key
+				const amount = parseFloat(log.amount) || 0;
+  
+				if (trackedNutrients.includes(nutrientKey)) {
+					aggregatedNutrients[nutrientKey] = (aggregatedNutrients[nutrientKey] || 0) + amount;
+				}
+			});
+		}
+  
+		// 2️⃣ Merge with individual AsyncStorage values (if present)
+		Object.keys(storedData).forEach((key) => {
+			const normalizedKey = key.toLowerCase().trim();
+			if (trackedNutrients.includes(normalizedKey) && !aggregatedNutrients[normalizedKey]) {
+				aggregatedNutrients[normalizedKey] = parseFloat(storedData[key]) || 0;
+			}
+		});
+  
+		console.log("Aggregated Nutrient Data:", aggregatedNutrients); // Debugging
+		return aggregatedNutrients;
+	};
+
+  const generateGoalWithAI = async () => {
+	
+	try {
+		const { manifest } = Constants;
+
+		const storedData = await getAllItems();
+		console.log(storedData);
+
+		const nutritionalInfo = await fetchData();
+
+		console.log('nutritional info', nutritionalInfo);
+
+		const nutritionalInfoString = Object.entries(nutritionalInfo)
+			.map(([key, value]) => `${key}: ${value}`)
+			.join("\n");
+
+		const message = `I'm ${storedData['height']} and weight about ${storedData['weight']}.
+		Here are my nutritional information: ${nutritionalInfoString}
+		`
+
+		console.log("message to send", message);
+
+		const baseUrl = 
+      		manifest?.debuggerHost?.split(':').shift() || 'localhost';
+
+		const apiUrl = `http://bzywtj0-anonymous-8069.exp.direct/api/goal`;
+    	console.log('Attempting to fetch from:', apiUrl);
+
+		const response = await fetch(apiUrl, {
+			method: 'POST',
+			// headers: {
+			// 	'Content-Type': 'application/json',
+			// },
+			body: JSON.stringify({ content: message })
+		});
+		const airesponse = await response.json();
+		console.log("AI RESPONSE:", airesponse);
+		await setItem("AI-Generated-Goal", airesponse.response);
+	} catch (error) {
+		console.error('Failed to reach /api/goal', error);
+	}
+  }
+
   return (
     <SafeAreaView style={[globalStyles.container, styles.overrideContainer]}>
       <Text style={[globalStyles.title, styles.overrideTitle]}>Nutrient Tracker</Text>
@@ -162,6 +237,14 @@ export default function NutrientLogScreen() {
       >
         <Text style={[globalStyles.authButtonText, styles.customGoalButtonText]}>Set Custom Goal</Text>
       </TouchableOpacity>
+
+		{/* Custom Goal Button */}
+		<TouchableOpacity 
+			style={[globalStyles.authButton, styles.aiButton]} 
+			onPress={generateGoalWithAI}
+		>
+			<Text style={[globalStyles.authButtonText, styles.aiButtonText]}>Generate AI Goal</Text>
+		</TouchableOpacity>
 
       <TouchableOpacity 
         style={[globalStyles.authButton, styles.logButton]} 
@@ -463,4 +546,16 @@ const styles = StyleSheet.create({
     color: '#777',
     marginTop: 2,
   },
+	aiButton: {
+		backgroundColor: '#007BFF', // Blue color for custom goal
+		padding: 15,
+		borderRadius: 10,
+		alignItems: 'center',
+		marginBottom: 10,
+	},
+	aiButtonText: {
+		color: 'white',
+		fontWeight: 'bold',
+		fontSize: 16,
+	},
 });
