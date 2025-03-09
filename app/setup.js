@@ -15,6 +15,7 @@ export default function SetupScreen() {
 // store all these and rank via submit
   // Save user data and navigate to Home Page
   const handleSubmit = async () => {
+	await AsyncStorage.clear();
     const userInfo = { gender, height, weight };
 
     // Save to AsyncStorage
