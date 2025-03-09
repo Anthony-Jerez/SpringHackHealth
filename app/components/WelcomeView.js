@@ -2,36 +2,49 @@ import LevelAnimation from '../components/LevelAnimation';
 import { Avatar } from 'react-native-paper';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import StatsBar from '../components/StatsBar';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import { SignOutButton } from '../utils/SignOutButton';
 import { useUser } from '@clerk/clerk-expo';
 import { globalStyles } from '../styles/globalStyles';
 import { useEffect, useState, useCallback } from 'react';
 import { getAllItems } from '../utils/AsyncStorage'; // Import your function
 import { useFocusEffect } from 'expo-router';
-
+import { nutrients } from '../(tabs)/nutrientData'; // Import the nutrient list
 
 export default function WelcomeView() {
 	const { user } = useUser();
 
 	const [nutrientData, setNutrientData] = useState({});
-  
-	// Only track these nutrients
-	const trackedNutrients = ['magnesium', 'Vitamin B12', 'iodine', 'calcium', 'iron', 'vitamin D', 'vitamin A'];
-  
-	// Function to fetch AsyncStorage data
+	const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
+
+	// Function to fetch & process data
 	const fetchData = async () => {
 		const storedData = await getAllItems();
-		
-		// Filter only relevant nutrients
-		const filteredData = Object.keys(storedData)
-			.filter(key => trackedNutrients.includes(key.toLowerCase())) // Normalize case
-			.reduce((obj, key) => {
-				obj[key] = storedData[key];
-				return obj;
-			}, {});
+		console.log("Stored Data:", storedData); // Debugging
 
-		setNutrientData(filteredData);
+		// 1️⃣ Aggregate `loggedNutrients` to sum amounts by `nutrientId`
+		const aggregatedNutrients = {};
+		if (storedData.loggedNutrients) {
+			storedData.loggedNutrients.forEach((log) => {
+				const nutrientKey = log.nutrientId.toLowerCase().trim(); // Normalize key
+				const amount = parseFloat(log.amount) || 0;
+
+				if (trackedNutrients.includes(nutrientKey)) {
+					aggregatedNutrients[nutrientKey] = (aggregatedNutrients[nutrientKey] || 0) + amount;
+				}
+			});
+		}
+
+		// 2️⃣ Merge with individual AsyncStorage values (if present)
+		Object.keys(storedData).forEach((key) => {
+			const normalizedKey = key.toLowerCase().trim();
+			if (trackedNutrients.includes(normalizedKey) && !aggregatedNutrients[normalizedKey]) {
+				aggregatedNutrients[normalizedKey] = parseFloat(storedData[key]) || 0;
+			}
+		});
+
+		console.log("Aggregated Nutrient Data:", aggregatedNutrients); // Debugging
+		setNutrientData(aggregatedNutrients);
 	};
 
 	// 🔄 Fetch data every time the user navigates back to the screen
@@ -41,8 +54,9 @@ export default function WelcomeView() {
 		}, [])
 	);
 
+	// ✅ Wrap content inside ScrollView for scrolling
 	return (
-		<>
+		<ScrollView contentContainerStyle={styles.scrollContainer}>
 			<SignOutButton />
 			<Text style={globalStyles.greeting}>Hello, {user?.username}!</Text>
 
@@ -59,24 +73,36 @@ export default function WelcomeView() {
 			{/* Title */}
 			<Text style={globalStyles.title}>Home</Text>
 
-			{/* Retro Stats Bar for Nutrients */}
-			{/* <StatsBar label="Protein" storageKey='protein' maxValue={100} />
-			<StatsBar label="Vitamin C" storageKey='vitaminC' maxValue={100} />
-			<StatsBar label="Iron" storageKey='iron' maxValue={100} /> */}
-			{/* Render StatsBar for each valid nutrient */}
-			{Object.entries(nutrientData).map(([key, value]) => (
-				<StatsBar key={key} label={key} value={value} maxValue={100} />
-			))}
+			{/* Render StatsBars with margin for spacing */}
+			<View style={styles.statsContainer}>
+				{/* {Object.entries(nutrientData).map(([key, value]) => (
+					<StatsBar key={key} label={key} value={value} maxValue={100} />
+				))} */}
+				{Object.entries(nutrientData).map(([key, value]) => {
+					const nutrient = nutrients.find(n => n.id === key);
+					return nutrient ? (
+						<StatsBar key={key} label={nutrient.name} value={value} maxValue={nutrient.recommendedDaily} />
+					) : null;
+				})}
+			</View>
+
+			{/* Add extra spacing below to prevent overlapping */}
+			<View style={{ height: 100 }} />
+
 			<LevelAnimation level={1} />
-		</>
+		</ScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
-	noNutrientsText: {
-	  textAlign: 'center',
-	  padding: 20,
-	  color: '#666',
-	  fontStyle: 'italic',
-	}
-  });
+	scrollContainer: {
+		flexGrow: 1,
+		padding: 20,
+		alignItems: 'center',
+	},
+	statsContainer: {
+		width: '100%', // Ensures proper alignment
+		alignItems: 'center',
+		marginBottom: 20, // Adds space before LevelAnimation
+	},
+});

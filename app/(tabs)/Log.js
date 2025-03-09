@@ -94,6 +94,9 @@ const handleLogNutrient = async () => {
 	console.error('Error saving nutrient log:', error);
   }
 
+  const storedData = await getAllItems();
+  console.log(JSON.stringify(storedData, null, 2));
+  
   setSelectedNutrient(null);
   setAmount('');
   setModalVisible(false);
