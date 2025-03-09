@@ -19,15 +19,15 @@ const LevelAnimation = ({ level }) => {
 
 const styles = StyleSheet.create({
   container: {
-    width: 120, // Fixed width
-    height: 120, // Fixed height
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden', // Prevents any overflow
+    width: '100%', // Ensure it takes full width for centering
+    height: 150, // Increase height to prevent cropping
   },
   animation: {
-    width: 100, // Set a max width for animation
-    height: 100, // Set a max height
+    width: 120, // Increase size for better visibility
+    height: 150,
+    alignSelf: 'center', // Center animation horizontally
   },
 });
 
