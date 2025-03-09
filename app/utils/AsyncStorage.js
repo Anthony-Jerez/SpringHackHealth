@@ -52,15 +52,23 @@ export const getAllKeys = async () => {
 };
 
 export const getAllItems = async () => {
-  try {
-    const keys = await AsyncStorage.getAllKeys();
-    const items = await AsyncStorage.multiGet(keys);
-    return items.reduce((accumulator, [key, value]) => {
-      accumulator[key] = JSON.parse(value);
-      return accumulator;
-    }, {});
-  } catch (error) {
-    console.error('Error getting all items:', error);
-    return {};
-  }
-};
+	try {
+	  const keys = await AsyncStorage.getAllKeys();
+	  const items = await AsyncStorage.multiGet(keys);
+	  
+	  return items.reduce((accumulator, [key, value]) => {
+		try {
+		  // Check if the value is JSON or plain string
+		  accumulator[key] = value.startsWith('{') || value.startsWith('[')
+			? JSON.parse(value) // Parse JSON objects/arrays
+			: value; // Keep plain strings as-is
+		} catch (error) {
+		  console.warn(`Skipping invalid JSON for key: ${key}`);
+		}
+		return accumulator;
+	  }, {});
+	} catch (error) {
+	  console.error('Error getting all items:', error);
+	  return {};
+	}
+  };
