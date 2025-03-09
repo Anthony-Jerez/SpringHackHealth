@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Avatar } from 'react-native-paper';
 import { useUser } from '@clerk/clerk-expo';
 import { useFocusEffect } from 'expo-router';
@@ -7,10 +6,11 @@ import { getItem, setItem, getAllItems } from '../utils/AsyncStorage';
 import LevelAnimation from '../components/LevelAnimation';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import StatsBar from '../components/StatsBar';
-import { StyleSheet, View, Text, ScrollView, SafeAreaView } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { SignOutButton } from '../utils/SignOutButton';
 import { globalStyles } from '../styles/globalStyles';
 import { nutrients } from '../(tabs)/nutrientData'; // Import the nutrient list
+import { StatusBar } from 'expo-status-bar';
 
 export default function WelcomeView() {
   const { user } = useUser();
@@ -86,7 +86,6 @@ export default function WelcomeView() {
   return (
 		<SafeAreaView style={styles.container}>
 			<StatusBar style="dark" />
-
 			{/* Header Section */}
 			<View style={styles.header}>
 				<Animated.View entering={FadeIn.duration(800)}>
@@ -139,32 +138,44 @@ export default function WelcomeView() {
 						<LevelAnimation level={1} />
 					</View>
 
-          {visibleNutrients.length > 0 ? (
-            <View style={styles.statsContainer}>
-              <Text style={styles.sectionTitle}>Your Nutrient Goals</Text>
-              {visibleNutrients.map((nutrient) => (
-                <View key={nutrient.id} style={styles.statBarWrapper}>
-                  <StatsBar
-                    label={`${nutrient.name} (${nutrient.unit})`}
-                    storageKey={nutrient.name.toLowerCase()}
-                    maxValue={nutrient.maxValue}
-                  />
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => handleRemoveNutrient(nutrient.id)}
-                  >
-                    <Text style={styles.removeButtonText}>×</Text>
-                  </TouchableOpacity>
-                 </View>
-               ))}
-            </View>
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  No custom nutrient goals set yet. Go to the "Log" tab and tap "Set Custom Goal" to get started!
-                </Text>
-              </View>
-            )}
+					{/* Nutrient goals from user */}
+					{visibleNutrients.length > 0 ? (
+						<View style={styles.statsContainer}>
+							<Text style={styles.sectionTitle}>
+								Your Nutrient Goals
+							</Text>
+							{visibleNutrients.map((nutrient) => (
+								<View
+									key={nutrient.id}
+									style={styles.statBarWrapper}
+								>
+									<StatsBar
+										label={`${nutrient.name} (${nutrient.unit})`}
+										storageKey={nutrient.name.toLowerCase()}
+										maxValue={nutrient.maxValue}
+									/>
+									<TouchableOpacity
+										style={styles.removeButton}
+										onPress={() =>
+											handleRemoveNutrient(nutrient.id)
+										}
+									>
+										<Text style={styles.removeButtonText}>
+											×
+										</Text>
+									</TouchableOpacity>
+								</View>
+							))}
+						</View>
+					) : (
+						<View style={styles.emptyContainer}>
+							<Text style={styles.emptyText}>
+								No custom nutrient goals set yet. Go to the
+								"Log" tab and tap "Set Custom Goal" to get
+								started!
+							</Text>
+						</View>
+					)}
 
 					{/* Stats Section */}
 					<View style={styles.statsSection}>
@@ -209,7 +220,7 @@ export default function WelcomeView() {
 				<View style={{ height: 20 }} />
 			</ScrollView>
 		</SafeAreaView>
-	);
+  );
  
 }
 
