@@ -201,8 +201,10 @@ export default function NutrientLogScreen() {
 			.map(([key, value]) => `${key}: ${value}`)
 			.join("\n");
 
-		const message = `I'm ${storedData['height']} and weight about ${storedData['weight']}.
-		Here are my nutritional information: ${nutritionalInfoString}
+		const message = `
+		I'm a young adult that is ${storedData['height']} cm tall and weight about ${storedData['weight']}.
+		Here are my nutritional information: 
+		${nutritionalInfoString}
 		`
 
 		console.log("message to send", message);
