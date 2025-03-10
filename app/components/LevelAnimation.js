@@ -11,6 +11,7 @@ const LevelAnimation = ({ level }) => {
         autoPlay
         loop
         style={styles.animation}
+        resizeMode="contain" // Prevents stretching
       />
     </View>
   );
