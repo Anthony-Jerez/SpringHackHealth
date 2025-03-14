@@ -11,14 +11,13 @@ export default function SetupScreen() {
   const [gender, setGender] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-  const [dob, setDob] = useState('');
+  const [dob, setDob] = useState(new Date());
   const [rank, setRank] = useState('1');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Format date for display
   const formatDate = (date) => {
-    // return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-	return 'test'
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
   };
 
   // Show date picker
