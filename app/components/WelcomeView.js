@@ -134,10 +134,6 @@ export default function WelcomeView() {
   };
 
   return (
-<<<<<<< HEAD
-    <SafeAreaView style={globalStyles.container}>
-      <StatusBar style="dark" />
-=======
 		<SafeAreaView style={styles.container}>
 			<StatusBar style="dark" />
 			{/* Header Section */}
@@ -155,7 +151,6 @@ export default function WelcomeView() {
 								style={styles.avatar}
 							/>
 						</Animated.View>
->>>>>>> 6abd2ff3af3112304fbf732564bb3ce11593ecac
 
 						<View style={styles.userTextContainer}>
 							<Text style={styles.welcomeText}>Welcome back</Text>
