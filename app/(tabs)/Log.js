@@ -221,7 +221,7 @@ export default function NutrientLogScreen() {
       		manifest?.debuggerHost?.split(':').shift() || 'localhost';
 
 		const apiUrl = `http://localhost:8081/api/goal`;
-    	console.log('Attempting to fetch from:', apiUrl);
+    console.log('Attempting to fetch from:', apiUrl);
 
 		const response = await fetch(apiUrl, {
 			method: 'POST',
@@ -342,81 +342,6 @@ export default function NutrientLogScreen() {
           </View>
         )}
       </View>
-
-      {/* ✅ AI Goal Modal - Updated with Sex, Height, Weight inputs */}
-      <Modal animationType="slide" transparent visible={aiGoalModalVisible}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={[globalStyles.modalContainer, styles.modalContainer]}
-        >
-          <View style={[globalStyles.modalContent, styles.modalContent]}>
-            <Text style={globalStyles.modalTitle}>AI Recommended Goals</Text>
-            
-            <Text style={styles.aiInfoText}>
-              Please provide your information to get personalized nutrition goals:
-            </Text>
-            
-            <View style={styles.aiRecommendationsContainer}>
-              {/* Sex Input */}
-              <View style={styles.metricInputContainer}>
-                <Text style={styles.metricLabel}>Sex:</Text>
-                <TextInput
-                  style={styles.metricInput}
-                  placeholder="Male/Female"
-                  value={sex}
-                  onChangeText={setSex}
-                />
-              </View>
-              
-              {/* Height Input */}
-              <View style={styles.metricInputContainer}>
-                <Text style={styles.metricLabel}>Height (cm):</Text>
-                <TextInput
-                  style={styles.metricInput}
-                  placeholder="e.g., 175"
-                  keyboardType="numeric"
-                  value={height}
-                  onChangeText={setHeight}
-                />
-              </View>
-              
-              {/* Weight Input */}
-              <View style={styles.metricInputContainer}>
-                <Text style={styles.metricLabel}>Weight (kg):</Text>
-                <TextInput
-                  style={styles.metricInput}
-                  placeholder="e.g., 70"
-                  keyboardType="numeric"
-                  value={weight}
-                  onChangeText={setWeight}
-                />
-              </View>
-            </View>
-            
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity 
-                style={[globalStyles.modalButton, styles.cancelButton]}
-                onPress={() => setAiGoalModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[globalStyles.modalButton, styles.confirmButton]}
-                onPress={handleGenerateAiGoal}
-              >
-                <Text style={styles.confirmButtonText}>Generate Goals</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity 
-              style={[globalStyles.closeButton, styles.closeButton]}
-              onPress={() => setAiGoalModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
       {/* Nutrient Selection Modal */}
       <Modal animationType="slide" transparent visible={modalVisible}>
