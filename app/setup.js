@@ -11,14 +11,13 @@ export default function SetupScreen() {
   const [gender, setGender] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-  const [dob, setDob] = useState('');
+  const [dob, setDob] = useState(new Date());
   const [rank, setRank] = useState('1');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Format date for display
   const formatDate = (date) => {
-    // return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-	return 'test'
+    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
   };
 
   // Show date picker
@@ -88,7 +87,9 @@ export default function SetupScreen() {
         />
       )}
 
-      <Button title="Save & Continue" onPress={handleSubmit} />
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Save & Continue</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   datePickerButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: 'gray',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
@@ -131,5 +132,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  button: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

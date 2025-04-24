@@ -51,7 +51,7 @@ export const nutrients: Nutrient[] = [
   },
   {
     id: 'magnesium',
-    name: 'Magnesum',
+    name: 'Magnesium',
     type: 'mineral',
     unit: 'mg',
     recommendedDaily: 300,

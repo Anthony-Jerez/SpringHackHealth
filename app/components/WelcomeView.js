@@ -1,24 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView 
-} from 'react-native';
 import { Avatar } from 'react-native-paper';
 import { useUser } from '@clerk/clerk-expo';
 import { useFocusEffect } from 'expo-router';
-import { getItem, setItem, getAllItems, removeItem, clear } from '../utils/AsyncStorage';
+import { getItem, setItem, getAllItems } from '../utils/AsyncStorage';
 import LevelAnimation from '../components/LevelAnimation';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import StatsBar from '../components/StatsBar';
+import { StyleSheet, View, Text, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { SignOutButton } from '../utils/SignOutButton';
 import { globalStyles } from '../styles/globalStyles';
-import { nutrients } from '../(tabs)/nutrientData'; 
+import { nutrients } from '../(tabs)/nutrientData'; // Import the nutrient list
 import { StatusBar } from 'expo-status-bar';
 
 export default function WelcomeView() {
   const { user } = useUser();
   const [visibleNutrients, setVisibleNutrients] = useState([]);
   const [nutrientData, setNutrientData] = useState({});
-
   const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
   const [aiGoal, setAIGoal] = useState(''); // State for AI goal
   
@@ -63,74 +60,33 @@ export default function WelcomeView() {
 			});
 		}
 
-  // Extract valid nutrient IDs from the nutrients data
-  const trackedNutrients = nutrients.map(n => n.id.toLowerCase());
+		// 2️⃣ Merge with individual AsyncStorage values (if present)
+		Object.keys(storedData).forEach((key) => {
+			const normalizedKey = key.toLowerCase().trim();
+			if (trackedNutrients.includes(normalizedKey) && !aggregatedNutrients[normalizedKey]) {
+				aggregatedNutrients[normalizedKey] = parseFloat(storedData[key]) || 0;
+			}
+		});
 
-  // Load visible nutrients from AsyncStorage
-  useFocusEffect(
-    useCallback(() => {
-      const loadVisibleNutrients = async () => {
-        try {
-          const storedNutrients = await getItem('visibleNutrients');
-          setVisibleNutrients(storedNutrients || []);
-        } catch (error) {
-          console.error('Error loading visible nutrients:', error);
-        }
-      };
-      loadVisibleNutrients();
-    }, [])
-  );
+		console.log("Aggregated Nutrient Data:", aggregatedNutrients); // Debugging
+		setNutrientData(aggregatedNutrients);
+	};
 
-  // Fetch stored nutrient data whenever the view comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      const fetchData = async () => {
-        try {
-          const storedData = await getAllItems();
-          console.log("Stored Data:", storedData);
+	// 🔄 Fetch data every time the user navigates back to the screen
+	useFocusEffect(
+		useCallback(() => {
+			fetchData();
+		}, [])
+	);
 
-          // Aggregate logged nutrient data
-          const aggregatedNutrients = {};
-          if (storedData.loggedNutrients) {
-            storedData.loggedNutrients.forEach((log) => {
-              const nutrientKey = log.nutrientId.toLowerCase().trim();
-              const amount = parseFloat(log.amount) || 0;
-
-              if (trackedNutrients.includes(nutrientKey)) {
-                aggregatedNutrients[nutrientKey] = (aggregatedNutrients[nutrientKey] || 0) + amount;
-              }
-            });
-          }
-
-          // Merge with individual AsyncStorage values
-          Object.keys(storedData).forEach((key) => {
-            const nutrient = nutrients.find(
-              n => n.id.toLowerCase() === key.toLowerCase() || 
-                   n.name.toLowerCase() === key.toLowerCase()
-            );
-
-            if (nutrient && typeof storedData[key] === 'number') {
-              aggregatedNutrients[nutrient.id.toLowerCase()] = storedData[key];
-            }
-          });
-
-          console.log("Aggregated Nutrient Data:", aggregatedNutrients);
-          setNutrientData(aggregatedNutrients);
-        } catch (error) {
-          console.error('Error fetching nutrient data:', error);
-        }
-      };
-      
-      fetchData();
-    }, [])
-  );
-
-  // Clear AsyncStorage when the button is pressed
-  const handleClearStorage = async () => {
-    await clear();
-    setVisibleNutrients([]);
-    setNutrientData({});
-    console.log('AsyncStorage cleared');
+  const handleRemoveNutrient = async (nutrientId) => {
+    try {
+      const updatedNutrients = visibleNutrients.filter(item => item.id !== nutrientId);
+      setVisibleNutrients(updatedNutrients);
+      await setItem('visibleNutrients', updatedNutrients);
+    } catch (error) {
+      console.error('Error removing nutrient:', error);
+    }
   };
 
   return (
@@ -236,44 +192,7 @@ export default function WelcomeView() {
 							<Text style={styles.emptyText}>No AI goal generated yet.</Text>
 						)}
 					</View>
-
-					{/* Stats Section */}
-					<View style={styles.statsSection}>
-						<Text style={styles.sectionTitle}>
-							Today's Nutrients
-						</Text>
-
-						<View style={styles.statsContainer}>
-							{Object.entries(nutrientData).length > 0 ? (
-								Object.entries(nutrientData).map(
-									([key, value]) => {
-										const nutrient = nutrients.find(
-											(n) => n.id === key
-										);
-										return nutrient ? (
-											<StatsBar
-												key={key}
-												label={nutrient.name}
-												value={value}
-												maxValue={
-													nutrient.recommendedDaily
-												}
-											/>
-										) : null;
-									}
-								)
-							) : (
-								<View style={styles.emptyStateContainer}>
-									<Text style={styles.emptyStateText}>
-										No nutrients logged yet today.
-									</Text>
-									<Text style={styles.emptyStateSubtext}>
-										Add nutrients to see your progress!
-									</Text>
-								</View>
-							)}
-						</View>
-					</View>
+					
 				</Animated.View>
 
 				{/* Add extra spacing below */}
@@ -281,86 +200,146 @@ export default function WelcomeView() {
 			</ScrollView>
 		</SafeAreaView>
   );
+ 
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FAFAFA',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+	container: {
+		flex: 1,
+		backgroundColor: '#f5f5f5',
+	},
+	header: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingHorizontal: 20,
+		paddingVertical: 16,
+		backgroundColor: '#BBDBD1',
+		borderBottomLeftRadius: 20,
+		borderBottomRightRadius: 20,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+		elevation: 3,
+	},
+	userInfoContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+	},
+	avatar: {
+		backgroundColor: '#fff',
+		borderWidth: 2,
+		borderColor: '#fff',
+	},
+	userTextContainer: {
+		marginLeft: 12,
+	},
+	welcomeText: {
+		fontSize: 14,
+		color: '#555',
+		fontWeight: '500',
+	},
+	usernameText: {
+		fontSize: 18,
+		fontWeight: 'bold',
+		color: '#333',
+	},
+	scrollContainer: {
+		flexGrow: 1,
+		padding: 20,
+	},
+	dashboardCard: {
+		backgroundColor: 'white',
+		borderRadius: 16,
+		padding: 20,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+		elevation: 3,
+	},
+	cardHeader: {
+		marginBottom: 16,
+	},
+	cardTitle: {
+		fontSize: 20,
+		fontWeight: 'bold',
+		color: '#333',
+	},
+	cardSubtitle: {
+		fontSize: 14,
+		color: '#888',
+		marginTop: 4,
+	},
+	levelContainer: {
+		alignItems: 'center',
+		marginVertical: 16,
+		paddingVertical: 16,
+		borderRadius: 12,
+		backgroundColor: '#f9fcfb',
+		borderWidth: 1,
+		borderColor: '#BBDBD1',
+	},
+	statsSection: {
+		marginTop: 16,
+	},
+	sectionTitle: {
+		fontSize: 16,
+		fontWeight: '600',
+		color: '#555',
+		marginBottom: 12,
+	},
+	statsContainer: {
+		width: '100%',
+		alignItems: 'center',
+		gap: 12,
+	},
+	aiGoalContainer: {
+		width: '100%',
+		alignItems: 'center',
+		gap: 12,
+	},
+	statBarWrapper: {
+		flexDirection: 'row', // Align children horizontally
+		alignItems: 'center', // Vertically center children
+		justifyContent: 'space-between', // Space out children
+		marginBottom: 12,
+	},
+	emptyStateContainer: {
+		alignItems: 'center',
+		padding: 24,
+	},
+	emptyStateText: {
+		fontSize: 16,
+		fontWeight: '500',
+		color: '#666',
+		textAlign: 'center',
+	},
+	emptyStateSubtext: {
+		fontSize: 14,
+		color: '#888',
+		marginTop: 8,
+		textAlign: 'center',
+	},
+  removeButton: {
+    backgroundColor: '#DC143C',
+    width: 18,
+    height: 18,
+    borderRadius: 15, // Makes it circular
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#2196F3',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    marginLeft: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
-  userInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    backgroundColor: '#E3F2FD',
-    borderWidth: 2,
-    borderColor: '#E3F2FD',
-  },
-  userTextContainer: {
-    marginLeft: 12,
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500',
-  },
-  usernameText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  dashboardCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  dashboardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  cardTitle: {
+  removeButtonText: {
+    color: '#FFF', // White text
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-  },
-  clearButton: {
-    backgroundColor: '#FF5252',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  clearButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 14,
+    lineHeight: 20, // Ensures the "×" is centered vertically
   },
 });
-
-

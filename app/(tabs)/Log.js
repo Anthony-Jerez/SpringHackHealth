@@ -28,11 +28,8 @@ export default function NutrientLogScreen() {
   const [goalAmount, setGoalAmount] = useState('');
 
 	const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
-  
-  // ✅ Added states for user metrics
-  const [sex, setSex] = useState('');
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
+  const [percentages, setPercentages] = useState({});
+
 
   // Load logged nutrients on mount
   useEffect(() => {
@@ -57,7 +54,7 @@ export default function NutrientLogScreen() {
     }
   }, [isSignedIn, isLoaded]);
 
-  if (!isLoaded || !isSignedIn) return null;
+  if (!isLoaded) return null;
 
   const handleSelectNutrient = (nutrient) => setSelectedNutrient(nutrient);
   const handleSelectGoalNutrient = (nutrient) => setSelectedGoalNutrient(nutrient);
@@ -157,19 +154,40 @@ export default function NutrientLogScreen() {
     return todayLogs.reduce((total, log) => total + log.amount, 0);
   };
 
-  const getPercentage = (nutrientId) => {
+  const getPercentage = async (nutrientId) => {
     const nutrient = nutrients.find(n => n.id === nutrientId);
-    if (!nutrient || !nutrient.recommendedDaily) return 0;
-
+    if (!nutrient) return 0;
+  
+    // Fetch the custom goal from AsyncStorage
+    const customGoal = await getItem(`${nutrientId}-goal`);
+  
+    // Use custom goal if it exists, else fallback to recommendedDaily
+    const maxValue = customGoal;
+  
     const total = calculateDailyTotal(nutrientId);
-    return Math.round((total / nutrient.recommendedDaily) * 100);
+    return Math.round((total / maxValue) * 100);
   };
+
+  const calculatePercentages = async () => {
+    const newPercentages = {};
+    for (const log of loggedNutrients) {
+      const percentage = await getPercentage(log.nutrientId);
+      newPercentages[log.id] = percentage;
+    }
+    setPercentages(newPercentages);
+  };  
+
+  useEffect(() => {
+    if (loggedNutrients.length > 0) {
+      calculatePercentages();
+    }
+  }, [loggedNutrients]);  
 
   const fetchData = async () => {
 		const storedData = await getAllItems();
 		console.log("Stored Data:", storedData); // Debugging
   
-		// 1️⃣ Aggregate `loggedNutrients` to sum amounts by `nutrientId`
+		// Aggregate `loggedNutrients` to sum amounts by `nutrientId`
 		const aggregatedNutrients = {};
 		if (storedData.loggedNutrients) {
 			storedData.loggedNutrients.forEach((log) => {
@@ -182,7 +200,7 @@ export default function NutrientLogScreen() {
 			});
 		}
   
-		// 2️⃣ Merge with individual AsyncStorage values (if present)
+		// Merge with individual AsyncStorage values (if present)
 		Object.keys(storedData).forEach((key) => {
 			const normalizedKey = key.toLowerCase().trim();
 			if (trackedNutrients.includes(normalizedKey) && !aggregatedNutrients[normalizedKey]) {
@@ -210,17 +228,18 @@ export default function NutrientLogScreen() {
 			.map(([key, value]) => `${key}: ${value}`)
 			.join("\n");
 
-		const message = `I'm ${storedData['height']} and weight about ${storedData['weight']}.
-		Here are my nutritional information: ${nutritionalInfoString}
-		`
+		const message = 
+		`I'm a young ${storedData['gender']} adult that is ${storedData['height']} cm tall and weight about ${storedData['weight']}.
+		Here are my nutritional information: 
+		${nutritionalInfoString}`
 
 		console.log("message to send", message);
 
 		const baseUrl = 
       		manifest?.debuggerHost?.split(':').shift() || 'localhost';
 
-		const apiUrl = `http://bzywtj0-anonymous-8069.exp.direct/api/goal`;
-    	console.log('Attempting to fetch from:', apiUrl);
+		const apiUrl = `http://localhost:8081/api/goal`;
+    console.log('Attempting to fetch from:', apiUrl);
 
 		const response = await fetch(apiUrl, {
 			method: 'POST',
@@ -240,294 +259,226 @@ export default function NutrientLogScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Nutrient Tracker</Text>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => setModalVisible(true)}>
-          <View style={styles.actionButtonInner}>
-            <MaterialCommunityIcons name="food-apple" size={24} color="#fff" />
-            <Text style={styles.actionButtonText}>Log Nutrients</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.goalButton]}
-          onPress={() => setCustomGoalModalVisible(true)}
-        >
-          <View style={styles.actionButtonInner}>
-            <Ionicons name="flag" size={24} color="#fff" />
-            <Text style={styles.actionButtonText}>Set Goal</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.actionButton, styles.aiButton]} onPress={generateGoalWithAI}>
-          <View style={styles.actionButtonInner}>
-            <FontAwesome5 name="robot" size={24} color="#fff" />
-            <Text style={styles.actionButtonText}>AI Goal</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Today's Intake Section */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Today's Intake</Text>
-          <Text style={styles.sectionSubtitle}>
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "short",
-              day: "numeric",
-            })}
-          </Text>
+      {!isSignedIn ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Please sign in to continue.</Text>
         </View>
-
-        {loggedNutrients.length > 0 ? (
-          <FlatList
-            data={loggedNutrients}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              const percentage = getPercentage(item.nutrientId)
-              return (
-                <View style={styles.logItem}>
-                  <View style={styles.logItemHeader}>
-                    <Text style={styles.logItemName}>{item.name}</Text>
-                    <Text style={styles.logItemAmount}>
-                      {item.amount} {item.unit}
-                    </Text>
-                  </View>
-
-                  <View style={styles.progressBarContainer}>
-                    <View
-                      style={[
-                        styles.progressBar,
-                        { width: `${Math.min(percentage, 100)}%` },
-                        percentage > 100
-                          ? styles.progressBarExceeded
-                          : percentage >= 80
-                            ? styles.progressBarNearComplete
-                            : null,
-                      ]}
-                    />
-                  </View>
-
-                  <Text
-                    style={[
-                      styles.logItemPercentage,
-                      percentage > 100
-                        ? styles.percentageExceeded
-                        : percentage >= 80
-                          ? styles.percentageNearComplete
-                          : null,
-                    ]}
-                  >
-                    {percentage}% of daily goal
-                  </Text>
-                </View>
-              )
-            }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        ) : (
-          <View style={styles.emptyContainer}>
-            <MaterialCommunityIcons name="food-off" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No nutrients logged today</Text>
-            <Text style={styles.emptySubtext}>Tap "Log Nutrients" to get started!</Text>
+      ) : (
+        <>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Nutrient Tracker</Text>
           </View>
-        )}
-      </View>
 
-      {/* ✅ AI Goal Modal - Updated with Sex, Height, Weight inputs */}
-      <Modal animationType="slide" transparent visible={aiGoalModalVisible}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={[globalStyles.modalContainer, styles.modalContainer]}
-        >
-          <View style={[globalStyles.modalContent, styles.modalContent]}>
-            <Text style={globalStyles.modalTitle}>AI Recommended Goals</Text>
-            
-            <Text style={styles.aiInfoText}>
-              Please provide your information to get personalized nutrition goals:
-            </Text>
-            
-            <View style={styles.aiRecommendationsContainer}>
-              {/* Sex Input */}
-              <View style={styles.metricInputContainer}>
-                <Text style={styles.metricLabel}>Sex:</Text>
-                <TextInput
-                  style={styles.metricInput}
-                  placeholder="Male/Female"
-                  value={sex}
-                  onChangeText={setSex}
-                />
+          {/* Action Buttons */}
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => setModalVisible(true)}>
+              <View style={styles.actionButtonInner}>
+                <MaterialCommunityIcons name="food-apple" size={24} color="#fff" />
+                <Text style={styles.actionButtonText}>Log Nutrients</Text>
               </View>
-              
-              {/* Height Input */}
-              <View style={styles.metricInputContainer}>
-                <Text style={styles.metricLabel}>Height (cm):</Text>
-                <TextInput
-                  style={styles.metricInput}
-                  placeholder="e.g., 175"
-                  keyboardType="numeric"
-                  value={height}
-                  onChangeText={setHeight}
-                />
-              </View>
-              
-              {/* Weight Input */}
-              <View style={styles.metricInputContainer}>
-                <Text style={styles.metricLabel}>Weight (kg):</Text>
-                <TextInput
-                  style={styles.metricInput}
-                  placeholder="e.g., 70"
-                  keyboardType="numeric"
-                  value={weight}
-                  onChangeText={setWeight}
-                />
-              </View>
-            </View>
-            
-            <View style={styles.modalButtonsRow}>
-              <TouchableOpacity 
-                style={[globalStyles.modalButton, styles.cancelButton]}
-                onPress={() => setAiGoalModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[globalStyles.modalButton, styles.confirmButton]}
-                onPress={handleGenerateAiGoal}
-              >
-                <Text style={styles.confirmButtonText}>Generate Goals</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity 
-              style={[globalStyles.closeButton, styles.closeButton]}
-              onPress={() => setAiGoalModalVisible(false)}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.goalButton]}
+              onPress={() => setCustomGoalModalVisible(true)}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <View style={styles.actionButtonInner}>
+                <Ionicons name="flag" size={24} color="#fff" />
+                <Text style={styles.actionButtonText}>Set Goal</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.actionButton, styles.aiButton]} onPress={generateGoalWithAI}>
+              <View style={styles.actionButtonInner}>
+                <FontAwesome5 name="robot" size={24} color="#fff" />
+                <Text style={styles.actionButtonText}>AI Goal</Text>
+              </View>
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
-      {/* Nutrient Selection Modal */}
-      <Modal animationType="slide" transparent visible={modalVisible}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Log a Nutrient</Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => {
-                  setSelectedNutrient(null)
-                  setModalVisible(false)
-                }}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
+          {/* Today's Intake Section */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Today's Intake</Text>
+              <Text style={styles.sectionSubtitle}>
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </Text>
             </View>
 
-            {selectedNutrient ? (
-              <View style={styles.amountContainer}>
-                <Text style={styles.selectedNutrientText}>
-                  {selectedNutrient.name} ({selectedNutrient.unit})
-                </Text>
-                <TextInput
-                  style={styles.amountInput}
-                  placeholder={`Amount in ${selectedNutrient.unit}`}
-                  keyboardType="numeric"
-                  value={amount}
-                  onChangeText={setAmount}
-                />
-                <View style={styles.modalButtonsRow}>
-                  <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedNutrient(null)}>
-                    <Text style={styles.cancelButtonText}>Back</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.confirmButton} onPress={handleLogNutrient}>
-                    <Text style={styles.confirmButtonText}>Log Nutrient</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
+            {loggedNutrients.length > 0 ? (
               <FlatList
-                data={nutrients}
+                data={loggedNutrients}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.nutrientItem} onPress={() => handleSelectNutrient(item)}>
-                    <Text style={styles.nutrientItemName}>{item.name}</Text>
-                    <Text style={styles.nutrientItemType}>{item.type}</Text>
-                  </TouchableOpacity>
-                )}
-                showsVerticalScrollIndicator={false}
-              />
-            )}
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+                renderItem={({ item }) => {
+                  const percentage = percentages[item.id] || 0;
+                  return (
+                    <View style={styles.logItem}>
+                      <View style={styles.logItemHeader}>
+                        <Text style={styles.logItemName}>{item.name}</Text>
+                        <Text style={styles.logItemAmount}>
+                          {item.amount} {item.unit}
+                        </Text>
+                      </View>
 
-      {/* Custom Goal Modal */}
-      <Modal animationType="slide" transparent visible={customGoalModalVisible}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Set Custom Goal</Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => {
-                  setSelectedGoalNutrient(null)
-                  setCustomGoalModalVisible(false)
+                      <View style={styles.progressBarContainer}>
+                        <View
+                          style={[
+                            styles.progressBar,
+                            { width: `${Math.min(percentage, 100)}%` },
+                            percentage >= 100
+                              ? styles.progressBarExceeded
+                              : percentage >= 75
+                                ? styles.progressBarNearComplete
+                                : null,
+                          ]}
+                        />
+                      </View>
+
+                      <Text
+                        style={[
+                          styles.logItemPercentage,
+                          percentage >= 100
+                            ? styles.percentageExceeded
+                            : percentage >= 75
+                              ? styles.percentageNearComplete
+                              : null,
+                        ]}
+                      >
+                        {percentage}% of daily goal
+                      </Text>
+                    </View>
+                  )
                 }}
-              >
-                <Ionicons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            {selectedGoalNutrient ? (
-              <View style={styles.amountContainer}>
-                <Text style={styles.selectedNutrientText}>
-                  {selectedGoalNutrient.name} ({selectedGoalNutrient.unit})
-                </Text>
-                <TextInput
-                  style={styles.amountInput}
-                  placeholder={`Goal amount in ${selectedGoalNutrient.unit}`}
-                  keyboardType="numeric"
-                  value={goalAmount}
-                  onChangeText={setGoalAmount}
-                />
-                <View style={styles.modalButtonsRow}>
-                  <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedGoalNutrient(null)}>
-                    <Text style={styles.cancelButtonText}>Back</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.confirmButton} onPress={handleSetCustomGoal}>
-                    <Text style={styles.confirmButtonText}>Set Goal</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <FlatList
-                data={nutrients}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.nutrientItem} onPress={() => handleSelectGoalNutrient(item)}>
-                    <Text style={styles.nutrientItemName}>{item.name}</Text>
-                    <Text style={styles.nutrientItemType}>{item.type}</Text>
-                  </TouchableOpacity>
-                )}
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContent}
               />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <MaterialCommunityIcons name="food-off" size={48} color="#ccc" />
+                <Text style={styles.emptyText}>No nutrients logged today</Text>
+                <Text style={styles.emptySubtext}>Tap "Log Nutrients" to get started!</Text>
+              </View>
             )}
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+
+          {/* Nutrient Selection Modal */}
+          <Modal animationType="slide" transparent visible={modalVisible}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Log a Nutrient</Text>
+                  <TouchableOpacity
+                    style={styles.modalCloseButton}
+                    onPress={() => {
+                      setSelectedNutrient(null)
+                      setModalVisible(false)
+                    }}
+                  >
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                {selectedNutrient ? (
+                  <View style={styles.amountContainer}>
+                    <Text style={styles.selectedNutrientText}>
+                      {selectedNutrient.name} ({selectedNutrient.unit})
+                    </Text>
+                    <TextInput
+                      style={styles.amountInput}
+                      placeholder={`Amount in ${selectedNutrient.unit}`}
+                      keyboardType="numeric"
+                      value={amount}
+                      onChangeText={setAmount}
+                    />
+                    <View style={styles.modalButtonsRow}>
+                      <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedNutrient(null)}>
+                        <Text style={styles.cancelButtonText}>Back</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.confirmButton} onPress={handleLogNutrient}>
+                        <Text style={styles.confirmButtonText}>Log Nutrient</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={nutrients}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity style={styles.nutrientItem} onPress={() => handleSelectNutrient(item)}>
+                        <Text style={styles.nutrientItemName}>{item.name}</Text>
+                        <Text style={styles.nutrientItemType}>{item.type}</Text>
+                      </TouchableOpacity>
+                    )}
+                    showsVerticalScrollIndicator={false}
+                  />
+                )}
+              </View>
+            </KeyboardAvoidingView>
+          </Modal>
+
+          {/* Custom Goal Modal */}
+          <Modal animationType="slide" transparent visible={customGoalModalVisible}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Set Custom Goal</Text>
+                  <TouchableOpacity
+                    style={styles.modalCloseButton}
+                    onPress={() => {
+                      setSelectedGoalNutrient(null)
+                      setCustomGoalModalVisible(false)
+                    }}
+                  >
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                {selectedGoalNutrient ? (
+                  <View style={styles.amountContainer}>
+                    <Text style={styles.selectedNutrientText}>
+                      {selectedGoalNutrient.name} ({selectedGoalNutrient.unit})
+                    </Text>
+                    <TextInput
+                      style={styles.amountInput}
+                      placeholder={`Goal amount in ${selectedGoalNutrient.unit}`}
+                      keyboardType="numeric"
+                      value={goalAmount}
+                      onChangeText={setGoalAmount}
+                    />
+                    <View style={styles.modalButtonsRow}>
+                      <TouchableOpacity style={styles.cancelButton} onPress={() => setSelectedGoalNutrient(null)}>
+                        <Text style={styles.cancelButtonText}>Back</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.confirmButton} onPress={handleSetCustomGoal}>
+                        <Text style={styles.confirmButtonText}>Set Goal</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={nutrients}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity style={styles.nutrientItem} onPress={() => handleSelectGoalNutrient(item)}>
+                        <Text style={styles.nutrientItemName}>{item.name}</Text>
+                        <Text style={styles.nutrientItemType}>{item.type}</Text>
+                      </TouchableOpacity>
+                    )}
+                    showsVerticalScrollIndicator={false}
+                  />
+                )}
+              </View>
+            </KeyboardAvoidingView>
+          </Modal>
+        </>
+      )}
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
