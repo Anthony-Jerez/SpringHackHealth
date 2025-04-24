@@ -192,44 +192,7 @@ export default function WelcomeView() {
 							<Text style={styles.emptyText}>No AI goal generated yet.</Text>
 						)}
 					</View>
-
-					{/* Stats Section */}
-					<View style={styles.statsSection}>
-						<Text style={styles.sectionTitle}>
-							Today's Nutrients
-						</Text>
-
-						<View style={styles.statsContainer}>
-							{Object.entries(nutrientData).length > 0 ? (
-								Object.entries(nutrientData).map(
-									([key, value]) => {
-										const nutrient = nutrients.find(
-											(n) => n.id === key
-										);
-										return nutrient ? (
-											<StatsBar
-												key={key}
-												label={nutrient.name}
-												value={value}
-												maxValue={
-													nutrient.recommendedDaily
-												}
-											/>
-										) : null;
-									}
-								)
-							) : (
-								<View style={styles.emptyStateContainer}>
-									<Text style={styles.emptyStateText}>
-										No nutrients logged yet today.
-									</Text>
-									<Text style={styles.emptyStateSubtext}>
-										Add nutrients to see your progress!
-									</Text>
-								</View>
-							)}
-						</View>
-					</View>
+					
 				</Animated.View>
 
 				{/* Add extra spacing below */}
@@ -332,12 +295,17 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		gap: 12,
 	},
-  statBarWrapper: {
-    flexDirection: 'row', // Align children horizontally
-    alignItems: 'center', // Vertically center children
-    justifyContent: 'space-between', // Space out children
-    marginBottom: 12,
-  },
+	aiGoalContainer: {
+		width: '100%',
+		alignItems: 'center',
+		gap: 12,
+	},
+	statBarWrapper: {
+		flexDirection: 'row', // Align children horizontally
+		alignItems: 'center', // Vertically center children
+		justifyContent: 'space-between', // Space out children
+		marginBottom: 12,
+	},
 	emptyStateContainer: {
 		alignItems: 'center',
 		padding: 24,
@@ -355,7 +323,7 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 	},
   removeButton: {
-    backgroundColor: '#FF6B6B', // Light red color
+    backgroundColor: '#DC143C',
     width: 18,
     height: 18,
     borderRadius: 15, // Makes it circular

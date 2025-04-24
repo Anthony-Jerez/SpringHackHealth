@@ -58,7 +58,7 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView 
-      style={globalStyles.container} // ✅ Uses globalStyles for background only
+      style={styles.container} // ✅ Uses globalStyles for background only
       contentContainerStyle={styles.scrollContainer} // ✅ Local styles for layout
     >
       {/* Measurements Section */}
@@ -177,7 +177,7 @@ const styles = {
     backgroundColor: '#F9F9F9',
   },
   datePickerButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: 'gray',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
@@ -197,7 +197,7 @@ const styles = {
     width: 180,
     paddingVertical: 12,
     marginVertical: 8,
-    backgroundColor: '#FFD700', // Gold Button
+    backgroundColor: 'gray',
     borderRadius: 25,
     alignItems: 'center',
     shadowColor: '#000',

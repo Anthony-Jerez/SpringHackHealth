@@ -87,7 +87,9 @@ export default function SetupScreen() {
         />
       )}
 
-      <Button title="Save & Continue" onPress={handleSubmit} />
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Save & Continue</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -121,7 +123,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   datePickerButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: 'gray',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
@@ -130,5 +132,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  button: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
