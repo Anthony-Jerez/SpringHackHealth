@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   datePickerButton: {
-    backgroundColor: 'gray',
+    backgroundColor: '#bfbfbf',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
   dateText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     fontWeight: 'bold',
   },

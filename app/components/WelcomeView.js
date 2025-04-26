@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Avatar } from 'react-native-paper';
 import { useUser } from '@clerk/clerk-expo';
 import { useFocusEffect } from 'expo-router';
@@ -12,12 +12,17 @@ import { globalStyles } from '../styles/globalStyles';
 import { nutrients } from '../(tabs)/nutrientData'; // Import the nutrient list
 import { StatusBar } from 'expo-status-bar';
 
+
 export default function WelcomeView() {
   const { user } = useUser();
   const [visibleNutrients, setVisibleNutrients] = useState([]);
   const [nutrientData, setNutrientData] = useState({});
   const trackedNutrients = nutrients.map(n => n.id); // Extract valid IDs
   const [aiGoal, setAIGoal] = useState(''); // State for AI goal
+  const [celebrate, setCelebrate] = useState(false);
+  const [celebrationToken, setCelebrationToken] = useState(0);
+  const [celebratedGoals, setCelebratedGoals] = useState(new Set());
+
   
   useEffect(() => {
     // Load visible nutrients from AsyncStorage
@@ -70,6 +75,16 @@ export default function WelcomeView() {
 
 		console.log("Aggregated Nutrient Data:", aggregatedNutrients); // Debugging
 		setNutrientData(aggregatedNutrients);
+
+		visibleNutrients.forEach(n => {
+			const current = aggregatedNutrients[n.id] ?? 0;
+			if (current >= n.maxValue && !celebratedGoals.has(n.id)) {
+			  setCelebratedGoals(prev => new Set(prev).add(n.id));
+			  setCelebrate(true);               // <— triggers LevelAnimation blast
+			  setTimeout(() => setCelebrate(false), 300); // quickly reset prop
+			}
+		  });
+		  
 	};
 
 	// 🔄 Fetch data every time the user navigates back to the screen
@@ -88,6 +103,21 @@ export default function WelcomeView() {
       console.error('Error removing nutrient:', error);
     }
   };
+
+  // Re-evaluate goals whenever either the totals **or** the list of goals changes
+  useEffect(() => {
+	if (!visibleNutrients.length) return;              // nothing to check yet
+	if (!Object.keys(nutrientData).length) return;     // totals not ready
+  
+	visibleNutrients.forEach(n => {
+	  const current = nutrientData[n.id] ?? 0;
+	  if (current >= n.maxValue && !celebratedGoals.has(n.id)) {
+		setCelebratedGoals(prev => new Set(prev).add(n.id));
+		setCelebrationToken(t => t + 1);               // see next section
+	  }
+	});
+  }, [visibleNutrients, nutrientData]);                // <— dependencies
+  
 
   return (
 		<SafeAreaView style={styles.container}>
@@ -141,7 +171,7 @@ export default function WelcomeView() {
 
 					{/* Level Display */}
 					<View style={styles.levelContainer}>
-						<LevelAnimation level={1} />
+  						<LevelAnimation level={1} token={celebrationToken} />
 					</View>
 
 					{/* Nutrient goals from user */}
@@ -337,9 +367,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   removeButtonText: {
-    color: '#FFF', // White text
+    color: 'black', // White text
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: 'semiBold',
     lineHeight: 20, // Ensures the "×" is centered vertically
   },
 });

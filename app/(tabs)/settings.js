@@ -116,18 +116,6 @@ export default function SettingsScreen() {
           )}
         </View>
       </View>
-      
-      {/* Visual Settings Section 
-      <View style={styles.section}>
-        <Text style={styles.title}>Visual Settings</Text>
-        <View style={styles.switchContainer}>
-          <Text style={styles.label}>Dark Mode</Text>
-          <Switch
-            value={isDarkMode}
-            onValueChange={(value) => setIsDarkMode(value)}
-          />
-        </View>
-            </View> */}
       <TouchableOpacity style={styles.authButton} onPress={saveChanges}>
         <Text style={styles.authButtonText}>Save Changes</Text>
       </TouchableOpacity>
@@ -177,13 +165,13 @@ const styles = {
     backgroundColor: '#F9F9F9',
   },
   datePickerButton: {
-    backgroundColor: 'gray',
+    backgroundColor: '#bfbfbf',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
   dateText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -197,7 +185,7 @@ const styles = {
     width: 180,
     paddingVertical: 12,
     marginVertical: 8,
-    backgroundColor: 'gray',
+    backgroundColor: '#BBDBD1',
     borderRadius: 25,
     alignItems: 'center',
     shadowColor: '#000',
@@ -207,7 +195,7 @@ const styles = {
     elevation: 5,
   },
   authButtonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     fontWeight: 'bold',
   },
